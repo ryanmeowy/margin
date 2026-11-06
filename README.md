@@ -24,6 +24,10 @@ OpenDesign 的订阅额度和用量只在网页控制台里能看到，这个 Ap
 |---|---|
 | ![明细](docs/app-detail-light.png) | ![设置](docs/app-settings-light.png) |
 
+深色模式：
+
+![深色](docs/app-overview-dark.png)
+
 ---
 
 ## 安装
