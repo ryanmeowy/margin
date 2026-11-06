@@ -470,6 +470,14 @@ button { font: inherit; color: inherit; }
 .chart-bar.is-today { fill: var(--chart-bar-hi); }
 .chart-bar.is-skeleton { fill: var(--surface-3); }
 @keyframes barGrow { from { transform: scaleY(0.04); opacity: 0.4; } }
+.chart-value {
+  font-size: 9.5px;
+  fill: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.chart-value.is-today { fill: var(--text-2); }
+
 .chart-label { fill: var(--text-3); font-size: 10.5px; font-family: var(--font-ui); }
 .chart-label.is-today { fill: var(--accent-strong); font-weight: 600; }
 .chart-empty { margin: 10px 0 8px; font-size: 11px; line-height: 1.5; color: var(--text-3); }
@@ -1166,6 +1174,17 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
         bar.appendChild(title);
       }
       svg.appendChild(bar);
+
+      // 柱子上方的数值：没有数据/骨架时不画，免得出现一排 0
+      if (!day.skeleton && day.tokensLabel && (day.ratio || 0) > 0) {
+        var value = document.createElementNS(SVGNS, 'text');
+        value.setAttribute('class', 'chart-value' + (day.isToday ? ' is-today' : ''));
+        value.setAttribute('x', 28 + 48 * i);
+        value.setAttribute('y', 94 - height - 5);
+        value.setAttribute('text-anchor', 'middle');
+        value.textContent = day.tokensLabel;
+        svg.appendChild(value);
+      }
 
       var label = document.createElementNS(SVGNS, 'text');
       label.setAttribute('class', 'chart-label' + (day.isToday ? ' is-today' : ''));
