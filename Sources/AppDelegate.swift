@@ -15,12 +15,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastSyncAt: Date?
     private var lastStableSyncLabel: String?
     private var manualRefresh = false
-    private var authNotice = ""
-    private var authTone = "ok"
-    private var authPending = false
-    private var importing = false
-    private var exportTask: Task<Void, Never>?
-    private var loginWatch: Task<Void, Never>?
+    private lazy var export = ExportController(storeProvider: { [weak self] in self?.store })
+    private lazy var authFlow = LoginCoordinator(hooks: LoginCoordinator.Hooks(
+        hidePanel: { [weak self] in self?.panel.hide() },
+        refreshSettings: { [weak self] in self?.pushSettingsState() },
+        setSettingsBusy: { [weak self] busy in self?.settingsBusy = busy },
+        refreshData: { [weak self] in await self?.refresh(userInitiated: true) },
+        resetStore: { [weak self] in self?.store?.reset() },
+        clearPanelState: { [weak self] in self?.panelState = nil },
+        resetStatusItem: { [weak self] in
+            guard let self else { return }
+            self.statusItem.apply(percent: nil, display: Prefs.snapshot.display, placeholder: true)
+        },
+        connectionState: { [weak self] in self?.store?.snapshotState()?.connection.state }
+    ))
     private var dailyTask: Task<Void, Never>?
 
     // MARK: 启动
@@ -103,21 +111,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if args.contains("--simulate-login") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 guard let self else { return }
-                self.logout()
-                self.authPending = true
-                self.authNotice = "已在浏览器打开登录页，登录完成后会自动同步…"
-                self.authTone = "ok"
-                self.pushSettingsState()
-                self.beginBrowserLoginWatch()
+                self.authFlow.logout()
+                self.authFlow.startBrowserLogin(openBrowser: false)
             }
         }
         if args.contains("--wait-only") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                self?.startBrowserLogin(openBrowser: false)
+                self?.authFlow.startBrowserLogin(openBrowser: false)
             }
         }
         if args.contains("--logout") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?.logout() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?.authFlow.logout() }
         }
         if args.contains("--login") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in self?.showLogin() }
@@ -136,7 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CredentialStore.loadToken() == nil, !UserDefaults.standard.bool(forKey: PrefsKey.didLogout) {
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
-                await self?.importSession(interactive: false, silent: true)
+                await self?.authFlow.importSession(interactive: false, silent: true)
             }
         }
     }
@@ -201,19 +205,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store?.reset()
             return
         }
-        // 一旦连上就结束等待态：连接成功比任何「等待」都优先
-        if authPending, state.connection.state == "ok" {
-            authPending = false
-            authNotice = "登录成功"
-            authTone = "ok"
-            loginWatch?.cancel()
-            loginWatch = nil
-            UserDefaults.standard.set(false, forKey: PrefsKey.didLogout)
-        }
-        // 浏览器登录等待中：面板的连接条也显示等待，而不是冷冰冰的「尚未配置」
-        if authPending, state.connection.state != "ok" {
-            state.connection.message = "等待浏览器登录…"
-        }
+        // 连上就结束等待（coordinator 自己处理 pending / 文案）
+        authFlow.connectionDidChange(state.connection)
+        authFlow.decorate(&state)
         // 后台刷新不把面板变成「正在同步…」——只有用户主动点刷新/⌘R 才显示
         if state.sync.busy, !manualRefresh, panelState != nil {
             state.sync.busy = false
@@ -278,8 +272,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func menuRefresh() { Task { await refresh(userInitiated: true) } }
     @objc private func menuSettings() { showSettings(pane: nil) }
     @objc private func menuAbout() { showSettings(pane: "about") }
-    @objc private func menuSyncSession() { Task { await importSession(interactive: true) } }
-    @objc private func menuLogout() { logout() }
+    @objc private func menuSyncSession() { Task { await authFlow.importSession(interactive: true) } }
+    @objc private func menuLogout() { authFlow.logout() }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 
     // MARK: 设置窗口
@@ -358,8 +352,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                              connection: connection, about: about, version: about.version,
                              busy: settingsBusy, workspaceOptions: store?.workspaceChoices ?? [],
                              workspaceId: store?.activeWorkspaceId ?? "",
-                             authNotice: authNotice, authTone: authTone,
-                             authPending: authPending)
+                             authNotice: authFlow.notice, authTone: authFlow.tone,
+                             authPending: authFlow.pending)
     }
 
     // MARK: 事件路由
@@ -381,13 +375,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .exportCSV:
             exportCSV()
         case .relogin, .browserLogin:
-            startBrowserLogin()
+            authFlow.startBrowserLogin()
         case .embeddedLogin:
             showLogin()
         case .importSession:
-            Task { await importSession(interactive: true) }
+            Task { await authFlow.importSession(interactive: true) }
         case .logout:
-            logout()
+            authFlow.logout()
         case .quit:
             NSApp.terminate(nil)
         case .setWorkspace(let id):
@@ -481,139 +475,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 用系统默认浏览器登录；回到 App 时自动把浏览器里的会话同步过来。
-    private func startBrowserLogin(openBrowser: Bool = true) {
-        panel.hide()
-        let apiBase = URL(string: Prefs.baseUrl) ?? URL(string: "https://amr-api.open-design.ai")!
-        let url = LoginWindowController.loginURL(for: apiBase)
-        if openBrowser { NSWorkspace.shared.open(url) }
-        authPending = true
-        authNotice = "已在浏览器打开登录页，登录完成后会自动同步…"
-        authTone = "ok"
-        NSApp.activate(ignoringOtherApps: true)
-        pushSettingsState()
-        beginBrowserLoginWatch()
-    }
-
-    /// 盯浏览器 Cookie 库：登录一发生就自动同步。整个等待期间界面保持 loading。
-    private func beginBrowserLoginWatch() {
-        loginWatch?.cancel()
-        loginWatch = Task { [weak self] in
-            guard let self else { return }
-            var fingerprint = BrowserSessionImport.cookieFingerprint()
-
-            // 已经登录过的情况：0.8 秒后先试一次
-            try? await Task.sleep(nanoseconds: 800_000_000)
-            if Task.isCancelled { return }
-            if await self.importSession(interactive: false, silent: true) { return }
-
-            let deadline = Date().addingTimeInterval(10 * 60)   // 给足登录时间：10 分钟
-            var lastAttempt = Date()
-            while !Task.isCancelled && Date() < deadline {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                if Task.isCancelled { return }
-                if self.panelState?.connection.state == "ok" { return }
-                let current = BrowserSessionImport.cookieFingerprint()
-                let changed = current != fingerprint
-                let due = Date().timeIntervalSince(lastAttempt) >= 20   // 兜底：每 20 秒强试一次
-                guard changed || due else { continue }
-                fingerprint = current
-                lastAttempt = Date()
-                if await self.importSession(interactive: false, silent: true) { return }
-            }
-            guard !Task.isCancelled else { return }
-            self.authPending = false
-            if self.authNotice.hasPrefix("已在浏览器打开登录页") {
-                self.authNotice = "没有检测到浏览器登录，可以再试一次"
-                self.authTone = "error"
-            }
-            self.pushSettingsState()
-        }
-    }
-
-    /// 退出登录：删 token、清 WebView Cookie、重置内存与缓存。
-    private func logout() {
-        loginWatch?.cancel()
-        loginWatch = nil
-        authPending = false
-        CredentialStore.deleteToken()
-        WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
-                                                modifiedSince: .distantPast) { }
-        store?.reset()
-        panelState = nil
-        statusItem.apply(percent: nil, display: Prefs.snapshot.display, placeholder: true)
-        UserDefaults.standard.set(true, forKey: PrefsKey.didLogout)
-        authNotice = "已退出登录"
-        authTone = "ok"
-        pushSettingsState()
-    }
-
-    @discardableResult
-    private func importSession(interactive: Bool, silent: Bool = false) async -> Bool {
-        // 等待期间由后台轮询独占，手动入口不许打断；并发导入直接丢弃
-        if authPending, !silent { return false }
-        if importing { return false }
-        importing = true
-        defer { importing = false }
-        settingsBusy = !silent
-        if silent, authPending {
-            authNotice = "正在读取浏览器会话…"
-            authTone = "ok"
-        }
-        pushSettingsState()
-        defer { settingsBusy = false; pushSettingsState() }
-
-        let apiBase = URL(string: Prefs.baseUrl) ?? URL(string: "https://amr-api.open-design.ai")!
-        do {
-            let token = try await BrowserSessionImport.sessionToken()
-            // 先验证再落盘：浏览器里可能只有匿名/过期 cookie，直接存会显示成「登录已过期」
-            _ = try await OpenDesignAPI.validate(baseURL: apiBase, token: token)
-            try? CredentialStore.saveToken(token)
-            await refresh(userInitiated: true)
-            // 会话已经验证过：refresh 只是拉数据，网络抖动不该把 token 删掉
-            let state = store?.snapshotState()?.connection.state
-            guard state == "ok" || state == "offline" else {
-                CredentialStore.deleteToken()
-                store?.reset()
-                panelState = nil
-                guard !silent else { return false }
-                authPending = false
-                authNotice = "浏览器里的会话还没生效，完成登录后再试"
-                authTone = "error"
-                return false
-            }
-            authPending = false
-            authNotice = "登录成功"
-            authTone = "ok"
-            UserDefaults.standard.set(false, forKey: PrefsKey.didLogout)
-            NSLog("margin: imported browser session")
-            return true
-        } catch {
-            NSLog("margin: import failed \(error.localizedDescription)")
-            if let od = error as? ODError, case .unauthorized = od {
-                // 浏览器里的会话无效：别留一个坏 token 把界面卡在「已过期」
-                CredentialStore.deleteToken()
-                store?.reset()
-                panelState = nil
-            } else if let od = error as? ODError, case .forbidden = od {
-                CredentialStore.deleteToken()
-                store?.reset()
-                panelState = nil
-            }
-            guard !silent else {
-                if authPending {
-                    authNotice = "已在浏览器打开登录页，登录完成后会自动同步…"
-                    pushSettingsState()
-                }
-                return false
-            }
-            authPending = false
-            authNotice = "浏览器里的会话还没生效，完成登录后再试"
-            authTone = "error"
-            return false
-        }
-    }
-
     private func showLogin() {
         panel.hide()
         let url = URL(string: Prefs.baseUrl) ?? URL(string: "https://amr-api.open-design.ai")!
@@ -628,52 +489,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.show()
     }
 
-    private func exportCSV() {
-        guard exportTask == nil else { return }
-        guard let store else { return }
-        store.setExporting(true)
-        exportTask = Task { [weak self] in
-            guard let self else { return }
-            let body = await store.exportCSV(days: 7) { count in
-                store.reportExport(count)
-            }
-            store.setExporting(false)
-            defer { self.exportTask = nil }
+    private func exportCSV() { export.start() }
 
-            guard !body.isEmpty else {
-                Notifier.notify(title: "导出失败", body: "没有拿到明细数据")
-                return
-            }
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM"
-            let base = "margin-usage-\(formatter.string(from: Date()))"
-            let url = Self.uniqueDownloadURL(base: base)
-
-            var data = Data([0xEF, 0xBB, 0xBF])        // UTF-8 BOM，Excel 打开不乱码
-            data.append(Data(body.utf8))
-            do {
-                try data.write(to: url)
-                let rows = body.split(separator: "\n").count - 9
-                Notifier.notify(title: "用量已导出", body: "\(rows) 条明细 · \(url.lastPathComponent)")
-                NSWorkspace.shared.activateFileViewerSelecting([url])
-            } catch {
-                Notifier.notify(title: "导出失败", body: error.localizedDescription)
-            }
-        }
-    }
-
-    /// ~/Downloads 里挑一个不重名的文件名
-    private static func uniqueDownloadURL(base: String) -> URL {
-        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser
-        var url = downloads.appendingPathComponent("\(base).csv")
-        var index = 2
-        while FileManager.default.fileExists(atPath: url.path) {
-            url = downloads.appendingPathComponent("\(base) (\(index)).csv")
-            index += 1
-        }
-        return url
-    }
 
     // MARK: 偏好 / 主题 / 定时
 

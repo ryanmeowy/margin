@@ -8,9 +8,9 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let web: WKWebView
     private let bridge = Bridge()
 
-    private(set) var contentHeight: CGFloat = 705
+    private(set) var contentHeight: CGFloat = PanelMetrics.maxHeight - PanelMetrics.contentInset - 43
     private var constrained = false
-    private let maxPanelHeight: CGFloat = 760
+    private let maxPanelHeight: CGFloat = PanelMetrics.maxHeight
     private var caretX: CGFloat = 196
     private var visible = false
     private var closing = false
@@ -21,7 +21,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     weak var anchorButton: NSStatusBarButton?
 
     override init() {
-        panel = MarginPanel(contentRect: NSRect(x: 0, y: 0, width: 392, height: 703),
+        panel = MarginPanel(contentRect: NSRect(x: 0, y: 0, width: PanelMetrics.width, height: PanelMetrics.initialHeight),
                             styleMask: [.borderless, .nonactivatingPanel],
                             backing: .buffered, defer: false)
         web = Bridge.makeWebView(bridge: bridge)
@@ -37,7 +37,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient]
         panel.delegate = self
 
-        let root = NSView(frame: NSRect(x: 0, y: 0, width: 392, height: 703))
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: PanelMetrics.width, height: PanelMetrics.initialHeight))
         root.autoresizingMask = [.width, .height]
 
         effect.material = .popover
@@ -140,15 +140,15 @@ final class PanelController: NSObject, NSWindowDelegate {
             // 超屏时把面板钉在 maxPanelHeight，页面改为「头部/底部固定、只滚内容区」
             Bridge.call("window.margin.setConstrained(\(shouldConstrain))", on: web)
         }
-        let height = min(max(reported.rounded(), 220), maxPanelHeight)
+        let height = min(max(reported.rounded(), PanelMetrics.minHeight), maxPanelHeight)
         guard abs(height - contentHeight) > 0.5 else { return }
         contentHeight = height
         guard visible else {
-            panel.setContentSize(NSSize(width: 392, height: height))
+            panel.setContentSize(NSSize(width: PanelMetrics.width, height: height))
             return
         }
         let top = panel.frame.maxY
-        panel.setFrame(NSRect(x: panel.frame.minX, y: top - height, width: 392, height: height),
+        panel.setFrame(NSRect(x: panel.frame.minX, y: top - height, width: PanelMetrics.width, height: height),
                        display: true, animate: false)
         applyChrome()
         panel.invalidateShadow()
@@ -180,7 +180,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         positionRetried = false
         let buttonRect = anchor.rect
         let screen = anchor.screen
-        let width: CGFloat = 392
+        let width: CGFloat = PanelMetrics.width
         let height = contentHeight
         let visibleFrame = screen.visibleFrame
 
