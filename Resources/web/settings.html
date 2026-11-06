@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Margin — 设置</title>
+<style>
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+  --font-num: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+
+  --surface: #F5F4ED;
+  --surface-2: #FAF9F5;
+  --surface-3: #E8E6DC;
+  --surface-inset: #F0EEE6;
+  --sidebar: #F5F4ED;
+  --text: #141413;
+  --text-2: #5E5D59;
+  --text-3: #67665F;
+  --line: #E8E6DC;
+  --line-strong: #D1CFC5;
+  --accent: #C96442;
+  --accent-strong: #9F4A31;
+  --accent-soft: #F3E4DC;
+  --accent-tint: rgba(201, 100, 66, 0.14);
+  --danger: #B53333;
+  --ok: #5C7A4A;
+  --ok-surface: #EBF0E4;
+  --ok-line: rgba(92, 122, 74, 0.24);
+  --ok-text: #4B623C;
+  --nav-active: #F3E4DC;
+  --input-bg: #FAF9F5;
+  --btn-primary-bg: #B45538;
+  --btn-primary-text: #FAF9F5;
+  --switch-off: #D1CFC5;
+  --switch-knob: #FAF9F5;
+  --seg-active-bg: #FAF9F5;
+  --focus: #3898EC;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --surface: #141413;
+  --surface-2: #30302E;
+  --surface-3: #3D3D3A;
+  --surface-inset: #1D1D1C;
+  --sidebar: #141413;
+  --text: #FAF9F5;
+  --text-2: #B0AEA5;
+  --text-3: #A6A196;
+  --line: rgba(250, 249, 245, 0.10);
+  --line-strong: rgba(250, 249, 245, 0.18);
+  --accent: #D97757;
+  --accent-strong: #F0A78D;
+  --accent-soft: rgba(217, 119, 87, 0.14);
+  --accent-tint: rgba(217, 119, 87, 0.20);
+  --danger: #E58383;
+  --ok: #A3B98C;
+  --ok-surface: rgba(163, 185, 140, 0.14);
+  --ok-line: rgba(163, 185, 140, 0.28);
+  --ok-text: #B7C9A2;
+  --nav-active: rgba(217, 119, 87, 0.16);
+  --input-bg: #1D1D1C;
+  --btn-primary-bg: #B45538;
+  --btn-primary-text: #FAF9F5;
+  --switch-off: #4D4C48;
+  --switch-knob: #FAF9F5;
+  --seg-active-bg: #4A4A46;
+  --focus: #3898EC;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; min-height: 632px; margin: 0; }
+body {
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font: inherit; }
+button { color: inherit; }
+::selection { background: rgba(14, 124, 99, 0.24); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.od-icon { display: inline-block; inline-size: var(--od-icon-size, 1em); block-size: var(--od-icon-size, 1em); flex: none; }
+.i-12 { --od-icon-size: 12px; }
+.i-13 { --od-icon-size: 13px; }
+.i-14 { --od-icon-size: 14px; }
+.i-15 { --od-icon-size: 15px; }
+.i-16 { --od-icon-size: 16px; }
+.i-18 { --od-icon-size: 18px; }
+
+/* 窗口：46px 原生标题栏留白（红绿灯 + 拖拽，不放任何控件）+ 196px 侧栏 + 内容区 */
+.app {
+  display: grid;
+  grid-template-rows: 46px minmax(0, 1fr);
+  height: 100%;
+  min-height: 632px;
+  background: var(--surface);
+}
+.drag-gap {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.body { display: grid; grid-template-columns: 196px minmax(0, 1fr); min-height: 0; }
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  height: 100%;
+  padding: 10px;
+  border-right: 1px solid var(--line);
+  background: var(--sidebar);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.nav-item:hover { background: var(--surface-3); color: var(--text); }
+.nav-item.is-active { background: var(--nav-active); color: var(--accent-strong); }
+.nav-item .od-icon { color: currentColor; opacity: 0.9; }
+
+.nav-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 8px 4px;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+.mini-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.nav-foot-text { min-width: 0; }
+.nav-foot-name { display: block; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-foot-plan { display: block; font-size: 10.5px; color: var(--text-3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 26px 30px 30px;
+  background: var(--surface);
+}
+.content::-webkit-scrollbar { width: 10px; }
+.content::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+.pane { max-width: 560px; }
+.pane-head { margin-bottom: 20px; }
+.eyebrow { margin: 0 0 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; color: var(--text-3); }
+.pane-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.25; }
+.pane-sub { margin: 6px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--text-2); max-width: 46ch; }
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--ok-line);
+  background: var(--ok-surface);
+}
+.status-orb {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--ok-text);
+}
+.status-text { min-width: 0; flex: 1; }
+.status-title { display: block; font-size: 12.5px; font-weight: 600; color: var(--ok-text); }
+.status-meta { display: block; margin-top: 1px; font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--ok-line);
+  color: var(--ok-text);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.status-pill::before { content: ""; width: 4.5px; height: 4.5px; border-radius: 999px; background: var(--ok); }
+
+.status-card[data-tone="danger"] { border-color: color-mix(in srgb, var(--danger) 30%, transparent); background: color-mix(in srgb, var(--danger) 9%, transparent); }
+.status-card[data-tone="danger"] .status-orb { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.status-card[data-tone="danger"] .status-title { color: var(--danger); }
+.status-card[data-tone="danger"] .status-pill { border-color: color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
+.status-card[data-tone="danger"] .status-pill::before { background: var(--danger); }
+
+.status-card[data-tone="idle"] { border-color: var(--line-strong); background: var(--surface-3); }
+.status-card[data-tone="idle"] .status-orb { background: var(--surface-2); color: var(--text-2); }
+.status-card[data-tone="idle"] .status-title { color: var(--text); }
+.status-card[data-tone="idle"] .status-pill { border-color: var(--line-strong); color: var(--text-2); }
+.status-card[data-tone="idle"] .status-pill::before { background: var(--text-3); }
+
+.account-form { display: block; }
+.field + .field { margin-top: 15px; }
+.field label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text); }
+
+.input, .select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.input::placeholder { color: var(--text-3); }
+.input:hover, .select:hover { border-color: var(--text-3); }
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+.input[readonly] { background: var(--surface-inset); color: var(--text-2); cursor: default; }
+.input-wrap { position: relative; }
+.input-wrap .input { padding-right: 42px; }
+.reveal {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.reveal:hover { background: var(--surface-3); color: var(--text); }
+.help { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: var(--text-3); }
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.form-note { margin: 0; font-size: 11px; color: var(--text-3); }
+select.input {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 34px;
+  padding: 0 30px 0 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A85' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+#workspaceRow { margin-top: 16px; }
+.login-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.login-row .btn-primary,
+.login-row .btn-compact {
+  height: 38px;
+  min-width: 150px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.advanced { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 12px; }
+.advanced > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--text-3); user-select: none;
+}
+.advanced > summary::-webkit-details-marker { display: none; }
+.advanced > summary::before { content: "›"; font-size: 14px; line-height: 1; transition: transform 150ms ease; }
+.advanced[open] > summary::before { transform: rotate(90deg); }
+.advanced > summary + * { margin-top: 14px; }
+.auth-notice { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--text-2); }
+.auth-notice.is-error { color: var(--danger); }
+.actions-right { display: flex; align-items: center; gap: 8px; }
+
+.btn-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.btn-compact:hover { background: var(--surface-3); }
+.btn-compact:active { transform: translateY(1px); }
+.btn-compact:disabled { opacity: 0.6; cursor: default; }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 150ms ease, opacity 150ms ease;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary:disabled { opacity: 0.72; cursor: progress; }
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.success-strip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ok-line);
+  background: var(--ok-surface);
+  color: var(--ok-text);
+  font-size: 11.5px;
+  font-weight: 500;
+  animation: stripIn 220ms ease-out both;
+}
+@keyframes stripIn { from { opacity: 0; transform: translateY(-3px); } }
+
+.group { margin-top: 18px; }
+.group-title { margin: 0 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--text-3); }
+.group-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 15px;
+  min-height: 58px;
+}
+.setting-row + .setting-row { border-top: 1px solid var(--line); }
+.setting-text { min-width: 0; }
+.setting-label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text); }
+.setting-help { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--text-3); max-width: 34ch; }
+.setting-control { flex: none; display: flex; align-items: center; gap: 8px; }
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--surface-3);
+}
+.segmented button {
+  height: 27px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button[aria-pressed="true"] {
+  background: var(--seg-active-bg);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--switch-off);
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--switch-knob);
+  box-shadow: 0 1px 2px rgba(9, 25, 19, 0.28);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); }
+.switch:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.select {
+  width: auto;
+  height: 32px;
+  min-width: 104px;
+  padding: 0 30px 0 10px;
+  font-size: 11.5px;
+  border-radius: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6C66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  cursor: pointer;
+}
+[data-theme="dark"] .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2398A49E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.slider-row { padding: 2px 15px 15px; transition: opacity 150ms ease; }
+.slider-row.is-disabled { opacity: 0.5; }
+.slider-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11.5px; color: var(--text-2); }
+.slider-label output { font-size: 12px; font-weight: 600; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 8px 0 0;
+  background: transparent;
+  cursor: pointer;
+  --range-pct: 60%;
+}
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--accent) 0 var(--range-pct),
+    var(--surface-3) var(--range-pct) 100%);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+[data-theme="dark"] .range::-webkit-slider-thumb { background: var(--surface-2); }
+.range:disabled { cursor: not-allowed; opacity: 0.45; }
+.range-scale { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10.5px; color: var(--text-3); }
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.about { text-align: center; padding-top: 0; }
+#pane-about {
+  max-width: none;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.about-mark {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+}
+.about-mark img { display: block; border-radius: 18px; }
+.about-mark .mark-dark { display: none; }
+[data-theme="dark"] .about-mark .mark-light { display: none; }
+[data-theme="dark"] .about-mark .mark-dark { display: block; }
+.about h2 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.025em; }
+.about-sub { margin: 4px 0 0; font-size: 11.5px; color: var(--text-3); }
+.version-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-top: 9px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.update-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.update-status { font-size: 11px; color: var(--text-3); }
+.copyright { margin: 22px 0 0; font-size: 10.5px; color: var(--text-3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="drag-gap" aria-hidden="true"></div>
+
+  <div class="body">
+    <nav class="nav" aria-label="设置分类">
+      <button class="nav-item is-active" type="button" data-pane="account" aria-current="page">
+        <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.3 3.6-5.2 7-5.2s6.2 1.9 7 5.2"/>
+        </svg>
+        账户
+      </button>
+      <button class="nav-item" type="button" data-pane="general">
+        <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/>
+          <path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/>
+        </svg>
+        通用
+      </button>
+      <button class="nav-item" type="button" data-pane="notifications">
+        <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M18 9a6 6 0 0 0-12 0c0 4.5-1.6 5.6-2 6h16c-.4-.4-2-1.5-2-6Z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/>
+        </svg>
+        通知
+      </button>
+      <button class="nav-item" type="button" data-pane="about">
+        <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/>
+        </svg>
+        关于
+      </button>
+      <div class="nav-foot">
+        <span class="mini-avatar" id="userInitials" aria-hidden="true"></span>
+        <span class="nav-foot-text">
+          <span class="nav-foot-name" id="userName"></span>
+          <span class="nav-foot-plan" id="userPlan"></span>
+        </span>
+      </div>
+    </nav>
+
+    <div class="content" id="content">
+      <section class="pane" id="pane-account">
+        <header class="pane-head">
+          <p class="eyebrow">连接</p>
+          <h2>账户与登录</h2>
+          <p class="pane-sub">连接你的 OpenDesign 工作区，同步套餐额度与实时用量。</p>
+        </header>
+
+        <div class="status-card" id="statusCard" data-tone="ok">
+          <span class="status-orb" aria-hidden="true">
+            <svg class="od-icon i-16" id="statusIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"></svg>
+          </span>
+          <span class="status-text">
+            <span class="status-title" id="statusTitle"></span>
+            <span class="status-meta" id="statusMeta"></span>
+          </span>
+          <span class="status-pill" id="statusPill"></span>
+        </div>
+
+        <div class="field" id="workspaceRow" hidden>
+          <label for="workspaceSelect">工作区</label>
+          <select class="input" id="workspaceSelect" aria-label="选择工作区"></select>
+          <p class="help">切换后立刻按该工作区重新拉取套餐与用量。</p>
+        </div>
+
+        <div class="login-row">
+          <button class="btn-primary" id="relogin" type="button">用浏览器登录</button>
+          <button class="btn-compact" id="syncSession" type="button" hidden>从 Chrome 同步</button>
+          <button class="btn-compact" id="logoutBtn" type="button">退出登录</button>
+        </div>
+
+        <p class="auth-notice" id="authNotice" hidden></p>
+
+        <form class="account-form" id="accountForm" novalidate>
+          <details class="advanced" id="advanced" hidden>
+            <summary>高级设置</summary>
+          <div class="field">
+            <label for="baseUrl">服务地址</label>
+            <input class="input" id="baseUrl" type="url" autocomplete="url" spellcheck="false" placeholder="https://amr-api.open-design.ai">
+            <p class="help">一般不用改；只有走自建网关或代理时才需要。</p>
+          </div>
+
+          <div class="field">
+            <label for="accountEmail">账号</label>
+            <input class="input" id="accountEmail" type="email" readonly tabindex="-1">
+            <p class="help">来自当前工作区登录态，只读。</p>
+          </div>
+
+          <div class="field">
+            <label for="accessToken">会话 Cookie</label>
+            <div class="input-wrap">
+              <input class="input" id="accessToken" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴新的 Cookie">
+              <button class="reveal" id="toggleToken" type="button" aria-label="显示访问令牌" aria-pressed="false">
+                <svg class="od-icon i-15 eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M2.8 12S6.2 5.8 12 5.8 21.2 12 21.2 12 17.8 18.2 12 18.2 2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.8"/>
+                </svg>
+                <svg class="od-icon i-15 eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" hidden>
+                  <path d="M3 3l18 18"/><path d="M10.5 6.1a8.7 8.7 0 0 1 1.5-.1c5.8 0 9.2 6 9.2 6a15 15 0 0 1-2.7 3.5"/><path d="M6.2 7.1A15 15 0 0 0 2.8 12S6.2 18 12 18c1.4 0 2.7-.3 3.8-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+                </svg>
+              </button>
+            </div>
+            <p class="help">不是 API Key：计费接口只认浏览器会话 Cookie。一般不用手填——点上面的「用浏览器登录」即可。</p>
+          </div>
+
+          <div class="form-actions">
+            <p class="form-note" id="formNote"></p>
+            <div class="actions-right">
+              <button class="btn-primary" id="saveAccount" type="submit">
+                <span class="spinner" id="saveSpinner" hidden></span>
+                <span id="saveLabel">保存并验证</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="success-strip" id="accountSuccess" role="status" hidden>
+            <svg class="od-icon i-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12 4 4 10-10"/></svg>
+            连接成功，用量已同步。
+          </div>
+          </details>
+        </form>
+      </section>
+
+      <section class="pane" id="pane-general" hidden>
+        <header class="pane-head">
+          <p class="eyebrow">运行</p>
+          <h2>通用</h2>
+          <p class="pane-sub">调整 Margin 在菜单栏中的显示方式与同步节奏。</p>
+        </header>
+
+        <div class="group">
+          <p class="group-title">外观</p>
+          <div class="group-card">
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">主题</span>
+                <span class="setting-help">跟随系统，或固定使用浅色或深色。</span>
+              </div>
+              <div class="setting-control">
+                <div class="segmented" role="group" aria-label="主题">
+                  <button type="button" data-theme-choice="system" aria-pressed="true">跟随系统</button>
+                  <button type="button" data-theme-choice="light" aria-pressed="false">浅色</button>
+                  <button type="button" data-theme-choice="dark" aria-pressed="false">深色</button>
+                </div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">菜单栏显示</span>
+                <span class="setting-help">在图标旁显示 5 小时剩余额度百分比。</span>
+              </div>
+              <div class="setting-control">
+                <div class="segmented" role="group" aria-label="菜单栏显示">
+                  <button type="button" data-display="percent" aria-pressed="true">百分比</button>
+                  <button type="button" data-display="icon" aria-pressed="false">仅图标</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-title">启动与同步</p>
+          <div class="group-card">
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">登录时自动启动</span>
+                <span class="setting-help">登录 Mac 后自动在菜单栏运行。</span>
+              </div>
+              <div class="setting-control">
+                <button class="switch" id="switchLaunch" type="button" role="switch" aria-checked="false" aria-label="登录时自动启动"></button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">自动刷新用量</span>
+                <span class="setting-help">按固定间隔在后台同步数据。</span>
+              </div>
+              <div class="setting-control">
+                <select class="select" id="intervalSelect" aria-label="自动刷新间隔">
+                  <option value="5">5 分钟</option>
+                  <option value="15">15 分钟</option>
+                  <option value="30">30 分钟</option>
+                  <option value="60">60 分钟</option>
+                </select>
+                <button class="switch" id="switchAutoRefresh" type="button" role="switch" aria-checked="true" aria-label="自动刷新用量"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-notifications" hidden>
+        <header class="pane-head">
+          <p class="eyebrow">提醒</p>
+          <h2>通知</h2>
+          <p class="pane-sub">在剩余额度不足或套餐即将到期时，让系统提醒你。</p>
+        </header>
+
+        <p class="notice" id="notifNotice" hidden>
+          <svg class="od-icon i-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false" style="margin-top:1px"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5"/><circle cx="12" cy="16.2" r="0.8" fill="currentColor" stroke="none"/></svg>
+          当前构建未获得系统通知授权，提醒开关暂不可用。
+        </p>
+
+        <div class="group">
+          <p class="group-title">系统通知</p>
+          <div class="group-card">
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">额度不足提醒</span>
+                <span class="setting-help">剩余额度低于阈值时发送系统通知。</span>
+              </div>
+              <div class="setting-control">
+                <button class="switch" id="switchUsageAlert" type="button" role="switch" aria-checked="false" aria-label="额度不足提醒"></button>
+              </div>
+            </div>
+            <div class="slider-row" id="thresholdRow">
+              <div class="slider-label">
+                <span>提醒阈值（剩余额度）</span>
+                <output id="thresholdOut" for="threshold">80%</output>
+              </div>
+              <input class="range" id="threshold" type="range" min="0" max="100" step="5" value="80" aria-label="剩余额度提醒阈值">
+              <div class="range-scale"><span>0%</span><span>100%</span></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">本期结束前提醒</span>
+                <span class="setting-help">在本期结束前 3 天提醒我。</span>
+              </div>
+              <div class="setting-control">
+                <button class="switch" id="switchRenewal" type="button" role="switch" aria-checked="false" aria-label="本期结束前提醒"></button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-text">
+                <span class="setting-label">每周用量摘要</span>
+                <span class="setting-help">每周一发送上周用量概览。</span>
+              </div>
+              <div class="setting-control">
+                <button class="switch" id="switchWeekly" type="button" role="switch" aria-checked="false" aria-label="每周用量摘要"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-about" hidden>
+        <div class="about">
+          <span class="about-mark" aria-hidden="true">
+            <img class="mark-light" src="brand-light.svg" width="72" height="72" alt="">
+            <img class="mark-dark" src="brand-dark.svg" width="72" height="72" alt="">
+          </span>
+          <h2>Margin</h2>
+          <p class="about-sub">菜单栏订阅用量</p>
+          <span class="version-pill" id="versionPill"></span>
+
+          <div class="update-row">
+            <button class="btn-compact" id="checkUpdate" type="button">
+              <span class="spinner" id="updateSpinner" hidden></span>
+              <span id="updateLabel">检查更新</span>
+            </button>
+            <span class="update-status" id="updateStatus" role="status"></span>
+          </div>
+
+          <p class="copyright">© 2026 Margin</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+build/
+.DS_Store
+*.zip
+*.dmg
+spike/build/
+spike/web/
+# 真机抓包可能含个人用量数据，不入库
+fixtures/captured/

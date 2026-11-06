@@ -1,0 +1,155 @@
+{
+  "_note": "Mock 与真实响应同形（fixtures/captured/*.json 为实测样本）。相对时间字段 *_in_seconds 在加载时换算，保证倒计时新鲜。",
+  "workspace": {
+    "workspaceId": "ws_mock_go",
+    "workspaceMemberId": "wm_mock",
+    "workspaceName": "mock workspace",
+    "workspaceType": "personal",
+    "role": "owner",
+    "planId": "go",
+    "billingState": "active",
+    "memberCount": 1
+  },
+  "snapshot": {
+    "schemaVersion": 1,
+    "billingScopeVersion": 2,
+    "billingMode": "shared",
+    "workspaceId": "ws_mock_go",
+    "workspaceMemberId": "wm_mock",
+    "billing": {
+      "billingState": "active",
+      "planId": "go"
+    },
+    "plan": {
+      "tier": "go",
+      "interval": "month",
+      "currentPeriodStart_in_seconds": -1382400,
+      "currentPeriodEnd_in_seconds": 1209600,
+      "cancelAtPeriodEnd": false,
+      "status": "active"
+    },
+    "wallet": {
+      "balanceUsd": "1.0000",
+      "expiresAt_in_seconds": 1209600,
+      "updatedAt_in_seconds": -1382400
+    },
+    "designPlanWindows": [
+      {
+        "kind": "5h",
+        "windowStart_in_seconds": -4320,
+        "resets_in_seconds": 4320,
+        "remainingCredits": "44954",
+        "limitCredits": "50000"
+      },
+      {
+        "kind": "7d",
+        "windowStart_in_seconds": -259200,
+        "resets_in_seconds": 345600,
+        "remainingCredits": "129567",
+        "limitCredits": "150000"
+      }
+    ],
+    "revisions": {
+      "billing": "subscription:v1:3",
+      "wallet": "shared-wallet:1"
+    }
+  },
+  "codingPlan": {
+    "eligible": true,
+    "tier": "go",
+    "windows": [
+      {
+        "durationSeconds": 18000,
+        "resetMode": "anchored_recurring",
+        "usedCredits": "5046",
+        "limitCredits": "50000",
+        "remainingCredits": "44954",
+        "resets_in_seconds": 4320
+      },
+      {
+        "durationSeconds": 604800,
+        "resetMode": "anchored_recurring",
+        "usedCredits": "20433",
+        "limitCredits": "150000",
+        "remainingCredits": "129567",
+        "resets_in_seconds": 345600
+      }
+    ]
+  },
+  "summary": {
+    "membershipTier": "go",
+    "billingInterval": "monthly",
+    "subscriptionStatus": "active",
+    "subscriptionCurrentPeriodEnd_in_seconds": 1209600,
+    "balanceUsd": "1.0000",
+    "subscriptionCancelAtPeriodEnd": false
+  },
+  "usage": {
+    "summary": {
+      "inputTokens": 534662990,
+      "outputTokens": 4729010,
+      "cacheReadTokens": 526193087,
+      "cacheWriteTokens": 30720
+    },
+    "totalCount": 5211,
+    "entries": [
+      {
+        "id": "usg_1",
+        "minutesAgo": 4,
+        "model": "deepseek-v4.1-flash",
+        "runtime": "deepseek-v4.1-flash",
+        "usageType": "design_plan",
+        "listChargedUsd": "0.0022",
+        "amountUsd": "-0.0000",
+        "inputTokens": 435,
+        "outputTokens": 1731,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": null
+      },
+      {
+        "id": "usg_2",
+        "minutesAgo": 5,
+        "model": "deepseek-v4.1-flash",
+        "runtime": "deepseek-v4.1-flash",
+        "usageType": "design_plan",
+        "listChargedUsd": "0.0008",
+        "amountUsd": "-0.0000",
+        "inputTokens": 495,
+        "outputTokens": 538,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": null
+      },
+      {
+        "id": "usg_3",
+        "minutesAgo": 6,
+        "model": "claude-haiku-5.5",
+        "runtime": "claude-haiku-5.5",
+        "usageType": "design_plan",
+        "listChargedUsd": "0.0004",
+        "amountUsd": "-0.0000",
+        "inputTokens": 423,
+        "outputTokens": 205,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": null
+      }
+    ]
+  },
+  "dailySeries": [
+    {
+      "daysAgo": 3,
+      "tokens": 84880000
+    },
+    {
+      "daysAgo": 2,
+      "tokens": 72340000
+    },
+    {
+      "daysAgo": 1,
+      "tokens": 54080000
+    },
+    {
+      "daysAgo": 0,
+      "tokens": 22710000
+    }
+  ]
+}

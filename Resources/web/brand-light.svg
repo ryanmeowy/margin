@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 30 30" role="img" aria-label="应用图标（Claude 风格 · 暖白底）">
+  <title>应用图标（Claude 风格 · 暖白底）</title>
+  <rect x="0" y="0" width="30" height="30" rx="9.5" ry="9.5" fill="#FAF9F5"/>
+  <circle cx="15" cy="15" r="8.4" fill="none" stroke="rgba(201,100,66,0.22)" stroke-width="2.8"/>
+  <circle cx="15" cy="15" r="8.4" fill="none" stroke="#C96442" stroke-width="2.8"
+          stroke-linecap="round" stroke-dasharray="52.78" stroke-dashoffset="16.89"
+          transform="rotate(-90 15 15)"/>
+  <circle cx="15" cy="15" r="1.7" fill="#B45538"/>
+</svg>

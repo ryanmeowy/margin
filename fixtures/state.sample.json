@@ -1,0 +1,153 @@
+{
+  "theme": "dark",
+  "animate": true,
+  "version": "0.1.0",
+  "connection": {
+    "state": "ok",
+    "message": ""
+  },
+  "prefs": {
+    "display": "percent",
+    "threshold": 80
+  },
+  "plan": {
+    "tier": "go",
+    "label": "Go",
+    "badge": "Go",
+    "intervalLabel": "月付 $7",
+    "priceLabel": "$10",
+    "priceUnit": "/ 月",
+    "stateLabel": "生效中",
+    "periodLabel": "11月20日到期"
+  },
+  "windows": [
+    {
+      "kind": "5h",
+      "label": "5 hour",
+      "remainingPercent": 90,
+      "resetLabel": "1 小时 12 分后重置"
+    },
+    {
+      "kind": "7d",
+      "label": "7d",
+      "remainingPercent": 86,
+      "resetLabel": "4 天后重置"
+    }
+  ],
+  "wallet": {
+    "label": "$1.00",
+    "caption": "可用"
+  },
+  "usage": {
+    "totalLabel": "539.39M",
+    "dailyAvgLabel": "77.06M",
+    "windowLabel": "近 7 天",
+    "rangeLabel": "10月31日 – 11月6日",
+    "inputLabel": "534.66M",
+    "outputLabel": "4.73M",
+    "cacheReadLabel": "526.19M",
+    "cacheWriteLabel": "30.72K",
+    "dailyState": "ready",
+    "dailyFallbackText": "",
+    "daily": [
+      {
+        "key": "2026-10-31",
+        "weekday": "六",
+        "label": "10月31日",
+        "tokensLabel": "48.2M",
+        "ratio": 0.62,
+        "isToday": false
+      },
+      {
+        "key": "2026-11-01",
+        "weekday": "日",
+        "label": "11月1日",
+        "tokensLabel": "62.4M",
+        "ratio": 0.8,
+        "isToday": false
+      },
+      {
+        "key": "2026-11-02",
+        "weekday": "一",
+        "label": "11月2日",
+        "tokensLabel": "71.6M",
+        "ratio": 0.92,
+        "isToday": false
+      },
+      {
+        "key": "2026-11-03",
+        "weekday": "二",
+        "label": "11月3日",
+        "tokensLabel": "84.88M",
+        "ratio": 1,
+        "isToday": false
+      },
+      {
+        "key": "2026-11-04",
+        "weekday": "三",
+        "label": "11月4日",
+        "tokensLabel": "72.34M",
+        "ratio": 0.93,
+        "isToday": false
+      },
+      {
+        "key": "2026-11-05",
+        "weekday": "四",
+        "label": "11月5日",
+        "tokensLabel": "54.08M",
+        "ratio": 0.7,
+        "isToday": false
+      },
+      {
+        "key": "2026-11-06",
+        "weekday": "今",
+        "label": "今天",
+        "tokensLabel": "22.71M",
+        "ratio": 0.3,
+        "isToday": true
+      }
+    ],
+    "recent": [
+      {
+        "model": "deepseek-v4.1-flash",
+        "badge": "DS",
+        "when": "今天 01:52",
+        "inputLabel": "435",
+        "outputLabel": "1,731",
+        "costLabel": "−$0.0022",
+        "tag": "Design Plan",
+        "tagKind": "plan"
+      },
+      {
+        "model": "deepseek-v4.1-flash",
+        "badge": "DS",
+        "when": "今天 01:52",
+        "inputLabel": "495",
+        "outputLabel": "538",
+        "costLabel": "−$0.0008",
+        "tag": "Design Plan",
+        "tagKind": "plan"
+      },
+      {
+        "model": "claude-haiku-5.5",
+        "badge": "CH",
+        "when": "今天 01:52",
+        "inputLabel": "423",
+        "outputLabel": "205",
+        "costLabel": "−$0.0004",
+        "tag": "Design Plan",
+        "tagKind": "plan"
+      }
+    ]
+  },
+  "sync": {
+    "label": "2 分钟前同步",
+    "busy": false
+  },
+  "account": {
+    "workspaceName": "示例工作区",
+    "email": "ryan@example.com",
+    "planLabel": "Go · 正常",
+    "ownerName": "示例用户"
+  }
+}

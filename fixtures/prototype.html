@@ -1,0 +1,2859 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoRouter — 套餐与用量</title>
+<style>
+@layer od-layout {
+  [hidden]:not([hidden="until-found" i]) { display: none !important; }
+  dialog:not([open]) { display: none !important; }
+
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid,.od-field,.od-stat,.od-cell,.od-tile) > :where(*) { min-width: 0; }
+
+  .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-grid    { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
+
+  .od-stat, .od-field, .od-cell { display: grid; gap: var(--od-gap, 2px); }
+  :where(.od-stat,.od-field,.od-cell) > :where(*) { display: block; }
+  .od-tile { display: grid; grid-template-rows: auto 1fr; }
+  :where(.od-tile) > :where(*) { display: block; }
+
+  .od-media { display: block; width: 100%; height: auto; aspect-ratio: var(--od-ratio, auto); }
+  .od-media-cover { object-fit: cover; }
+
+  .od-icon { display: inline-block; inline-size: var(--od-icon-size, 1em); block-size: var(--od-icon-size, 1em); flex: none; }
+
+  .od-truncate { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .od-clamp-2, .od-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .od-clamp-2 { -webkit-line-clamp: 2; }
+  .od-clamp-3 { -webkit-line-clamp: 3; }
+  .od-lines-2 { min-height: calc(2 * 1.4em); }
+  .od-nowrap  { white-space: nowrap; }
+  .od-keep    { word-break: keep-all; overflow-wrap: anywhere; }
+
+  .od-screen { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+  .od-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+
+  .od-rail { display: flex; gap: var(--od-gap, 8px); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+             padding-inline: var(--od-rail-pad, 16px); scroll-padding-inline: var(--od-rail-pad, 16px); }
+  .od-rail::-webkit-scrollbar { display: none; }
+  :where(.od-rail) > :where(*) { flex: none; scroll-snap-align: start; }
+  :where(.od-rail) > :where(:last-child) { margin-inline-end: var(--od-rail-pad, 16px); }
+
+  .od-spacer { flex: none; visibility: hidden; pointer-events: none; }
+  .od-touch  { min-width: 44px; min-height: 44px; }
+}
+:root [hidden]:where(:not([hidden="until-found" i])) { display: none; }
+
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+  --font-num: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+
+  --surface: #F6F8F6;
+  --surface-2: #FFFFFF;
+  --surface-3: #EDF1EE;
+  --surface-inset: #F1F4F1;
+  --sidebar: #EFF3F0;
+  --text: #14201C;
+  --text-2: #4E5C56;
+  --text-3: #5F6C66;
+  --line: rgba(18, 44, 35, 0.09);
+  --line-strong: rgba(18, 44, 35, 0.15);
+  --accent: #0E7C63;
+  --accent-strong: #0A5A47;
+  --accent-soft: #E2F2EC;
+  --accent-tint: rgba(14, 124, 99, 0.10);
+  --pine: #0B3A30;
+  --mint: #9AE6CB;
+  --blue: #3F6E9E;
+  --amber: #A5641C;
+  --danger: #B3261E;
+  --ok: #167A5C;
+  --ok-surface: #EDF7F2;
+  --ok-line: rgba(14, 124, 99, 0.16);
+  --ok-text: #0A5A47;
+  --nav-active: #E1F1EA;
+  --input-bg: #FFFFFF;
+  --btn-primary-bg: #0B3A30;
+  --btn-primary-text: #F7FCF9;
+  --panel: rgba(249, 251, 249, 0.95);
+  --panel-border: rgba(255, 255, 255, 0.65);
+  --menu-bg: rgba(250, 252, 250, 0.90);
+  --menu-hover-bg: #0E7C63;
+  --menu-hover-text: #FFFFFF;
+  --shadow-pop: 0 28px 70px -18px rgba(3, 16, 12, 0.55), 0 8px 22px -10px rgba(3, 16, 12, 0.28), 0 0 0 0.5px rgba(4, 24, 18, 0.18);
+  --shadow-window: 0 50px 120px -32px rgba(2, 12, 9, 0.70), 0 18px 44px -20px rgba(2, 12, 9, 0.45), 0 0 0 0.5px rgba(255, 255, 255, 0.16);
+  --chart-bar: rgba(14, 124, 99, 0.20);
+  --chart-bar-hi: #0E7C63;
+  --chart-grid: rgba(18, 44, 35, 0.08);
+  --switch-off: #C9D2CD;
+  --switch-knob: #FFFFFF;
+  --focus: #0E7C63;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --surface: #161B19;
+  --surface-2: #1D2320;
+  --surface-3: #252C29;
+  --surface-inset: #121715;
+  --sidebar: #1A201D;
+  --text: #EEF4F0;
+  --text-2: #B2BDB7;
+  --text-3: #98A49E;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.15);
+  --accent: #5FCBA9;
+  --accent-strong: #8FE6C9;
+  --accent-soft: rgba(95, 203, 169, 0.13);
+  --accent-tint: rgba(95, 203, 169, 0.10);
+  --mint: #9AE6CB;
+  --danger: #FF8A80;
+  --blue: #8CB9E2;
+  --amber: #E0A35C;
+  --ok: #6FD8B7;
+  --ok-surface: rgba(95, 203, 169, 0.10);
+  --ok-line: rgba(95, 203, 169, 0.20);
+  --ok-text: #8FE6C9;
+  --nav-active: rgba(95, 203, 169, 0.14);
+  --input-bg: #121715;
+  --btn-primary-bg: #79D9BB;
+  --btn-primary-text: #06251C;
+  --panel: rgba(24, 30, 27, 0.95);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --menu-bg: rgba(28, 34, 31, 0.92);
+  --menu-hover-bg: #5FCBA9;
+  --menu-hover-text: #06251C;
+  --shadow-pop: 0 28px 80px -18px rgba(0, 0, 0, 0.80), 0 8px 22px -10px rgba(0, 0, 0, 0.50), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --shadow-window: 0 50px 130px -32px rgba(0, 0, 0, 0.85), 0 18px 44px -20px rgba(0, 0, 0, 0.60), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --chart-bar: rgba(95, 203, 169, 0.18);
+  --chart-bar-hi: #6FD8B7;
+  --chart-grid: rgba(255, 255, 255, 0.07);
+  --switch-off: #3B4540;
+  --focus: #6FD8B7;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #08110F;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select, textarea { font: inherit; }
+button { color: inherit; }
+
+::selection { background: rgba(14, 124, 99, 0.24); }
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.i-12 { --od-icon-size: 12px; }
+.i-13 { --od-icon-size: 13px; }
+.i-14 { --od-icon-size: 14px; }
+.i-15 { --od-icon-size: 15px; }
+.i-16 { --od-icon-size: 16px; }
+.i-18 { --od-icon-size: 18px; }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.stage { position: fixed; inset: 0; overflow: hidden; }
+
+.wallpaper {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1100px 720px at 78% 10%, rgba(60, 156, 128, 0.34), transparent 62%),
+    radial-gradient(960px 640px at 10% 88%, rgba(43, 91, 112, 0.40), transparent 66%),
+    radial-gradient(760px 560px at 46% 54%, rgba(17, 44, 38, 0.55), transparent 72%),
+    linear-gradient(158deg, #0B1714 0%, #0A1518 46%, #07100F 100%);
+}
+
+.wallpaper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(520px 380px at 62% 30%, rgba(154, 230, 203, 0.10), transparent 70%),
+    radial-gradient(700px 520px at 88% 78%, rgba(50, 105, 96, 0.16), transparent 72%);
+  filter: blur(4px);
+}
+
+.wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+.menubar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 55;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px 0 10px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(9, 17, 14, 0.44);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(30px) saturate(1.5);
+  backdrop-filter: blur(30px) saturate(1.5);
+  font-size: 13px;
+  user-select: none;
+}
+
+.menubar-left, .menubar-right {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.menubar-left { gap: 1px; }
+.menubar-right { gap: 3px; }
+
+.apple {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  opacity: 0.92;
+}
+
+.mb-app, .mb-item, .mb-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.mb-app {
+  padding: 0 9px;
+  margin-right: 2px;
+  background: none;
+  border: 0;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  cursor: default;
+  transition: background 150ms ease;
+}
+
+.mb-app:hover, .mb-app[aria-expanded="true"] { background: rgba(255, 255, 255, 0.14); }
+
+.mb-item {
+  padding: 0 9px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.mb-glyph {
+  width: 24px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.mb-clock {
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+}
+
+.status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 23px;
+  padding: 0 7px;
+  margin-right: 2px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.10);
+  color: #F4FBF8;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.status-item:hover { background: rgba(255, 255, 255, 0.18); }
+.status-item:active { transform: scale(0.97); }
+.status-item[aria-expanded="true"] { background: rgba(255, 255, 255, 0.20); }
+.status-item.hide-pct { gap: 0; }
+
+.status-ring { width: 17px; height: 17px; display: block; flex: none; }
+.status-ring .ring-track { stroke: rgba(255, 255, 255, 0.26); }
+.status-ring .ring-arc { stroke: #9AE6CB; }
+.status-ring .ring-dot { fill: rgba(255, 255, 255, 0.9); }
+
+.status-pct {
+  font-family: var(--font-num);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.status-item.hide-pct .status-pct { display: none; }
+
+.app-menu {
+  position: fixed;
+  top: 33px;
+  left: 54px;
+  z-index: 60;
+  width: 248px;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: var(--menu-bg);
+  -webkit-backdrop-filter: blur(34px) saturate(1.6);
+  backdrop-filter: blur(34px) saturate(1.6);
+  box-shadow: 0 20px 50px -14px rgba(3, 16, 12, 0.45), 0 4px 12px -6px rgba(3, 16, 12, 0.2);
+  animation: menuIn 150ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  transform-origin: top left;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: default;
+}
+
+.menu-item:hover, .menu-item:focus-visible {
+  background: var(--menu-hover-bg);
+  color: var(--menu-hover-text);
+  outline: none;
+}
+
+.shortcut { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.menu-item:hover .shortcut, .menu-item:focus-visible .shortcut { color: inherit; opacity: 0.72; }
+.menu-sep { height: 1px; margin: 4px 7px; background: var(--line); }
+
+.popover {
+  position: fixed;
+  top: 38px;
+  left: 54px;
+  z-index: 50;
+  width: 392px;
+  max-height: calc(100vh - 54px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 26px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(36px) saturate(1.55);
+  backdrop-filter: blur(36px) saturate(1.55);
+  box-shadow: var(--shadow-pop);
+  animation: popIn 300ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  transform-origin: var(--caret-x, 300px) 0;
+  color: var(--text);
+}
+
+.popover::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: calc(var(--caret-x, 300px) - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 3px 0 0 0;
+  border-top: 1px solid var(--panel-border);
+  border-left: 1px solid var(--panel-border);
+  background: var(--panel);
+  transform: rotate(45deg);
+}
+
+.popover.is-compact::before { display: none; }
+.popover.is-closing { animation: popOut 140ms ease-in both; }
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-9px) scale(0.965); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes popOut {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.pop-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+}
+
+.brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9.5px;
+  background: linear-gradient(160deg, #10503F 0%, #0A2F26 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(3, 20, 15, 0.28);
+}
+
+.brand-text { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pop-head-actions { display: flex; align-items: center; gap: 2px; }
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.icon-btn:hover { background: var(--surface-3); color: var(--text); }
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn.is-spinning .od-icon { animation: spin 650ms linear; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pop-body { flex: 1 1 auto; padding: 0 16px 16px; }
+.popover:focus { outline: none; }
+
+.pop-view { animation: viewIn 240ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.plan-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 18px;
+  border-radius: 21px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background:
+    radial-gradient(130% 150% at 102% -8%, rgba(120, 222, 190, 0.22), transparent 56%),
+    linear-gradient(155deg, #0E4337 0%, #082E26 100%);
+  color: #F3FAF6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 24px -16px rgba(3, 22, 16, 0.55);
+}
+
+.plan-info { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+
+.plan-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(224, 244, 236, 0.72);
+  margin-bottom: 5px;
+}
+
+.plan-name-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+.plan-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: #F7FCF9;
+}
+
+.plan-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(154, 230, 203, 0.15);
+  border: 1px solid rgba(154, 230, 203, 0.20);
+  color: #B7F2DD;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.plan-status::before {
+  content: "";
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 999px;
+  background: #9AE6CB;
+}
+
+.plan-price { display: flex; align-items: baseline; gap: 3px; margin-top: 7px; color: #F3FAF6; }
+.price-num { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.price-unit { font-size: 11px; color: rgba(224, 244, 236, 0.72); }
+
+.plan-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  font-size: 11px;
+  color: rgba(224, 244, 236, 0.72);
+  white-space: nowrap;
+}
+
+.usage-ring { position: relative; width: 104px; height: 104px; flex: none; }
+.ring-svg { display: block; width: 100%; height: 100%; }
+.ring-track { fill: none; stroke: rgba(255, 255, 255, 0.15); stroke-width: 7; }
+.ring-value {
+  fill: none;
+  stroke: #9AE6CB;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 263.89;
+  stroke-dashoffset: 10.56;
+  transform: rotate(-90deg);
+  transform-origin: 52px 52px;
+  animation: ringFill 1100ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ringFill { from { stroke-dashoffset: 263.89; } }
+
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.ring-number-line { display: flex; align-items: baseline; gap: 1px; color: #F7FCF9; }
+.ring-num { font-size: 27px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; }
+.ring-pct { font-size: 11.5px; font-weight: 500; color: rgba(224, 244, 236, 0.78); }
+.ring-cap { font-size: 10.5px; color: rgba(224, 244, 236, 0.70); margin-top: 4px; letter-spacing: 0.02em; }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 2px 9px;
+}
+
+.section-head h3 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text);
+}
+
+.text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  margin: -3px -5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.text-btn:hover { background: var(--accent-soft); }
+
+.quota-card, .chart-card, .detail-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.quota-card { padding: 14px 15px; display: grid; gap: 13px; }
+.quota-card.quota-split { grid-template-columns: 1fr 1fr; gap: 11px 16px; }
+.quota-col { min-width: 0; }
+.quota-col + .quota-col { padding-left: 16px; border-left: 1px solid var(--line); }
+.q-big { margin-top: 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.q-meta { margin: 6px 0 0; font-size: 11px; line-height: 1.4; color: var(--text-3); }
+.quota-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+.quota-foot strong { margin-left: auto; font-size: 13.5px; font-weight: 600; }
+.quota-foot .muted { font-size: 11px; color: var(--text-3); }
+
+.quota-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+
+.q-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.q-dot { width: 6px; height: 6px; border-radius: 999px; flex: none; }
+.q-dot.a { background: var(--accent); }
+.q-dot.b { background: var(--blue); }
+.q-dot.c { background: var(--amber); }
+
+.q-value { display: flex; align-items: baseline; gap: 3px; font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
+.q-value strong { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.q-pct { min-width: 30px; text-align: right; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+.bar {
+  height: 6px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: barIn 850ms 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.bar.bar-b > span { background: var(--blue); }
+.bar.bar-c > span { background: var(--amber); }
+@keyframes barIn { from { transform: scaleX(0.02); } }
+
+.chart-card { padding: 14px 14px 7px; margin-top: 0; }
+
+.chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.chart-head h3 { margin: 0; font-size: 12.5px; font-weight: 600; }
+.chart-sub { margin: 3px 0 0; font-size: 11px; color: var(--text-3); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.chart-svg { display: block; width: 100%; height: auto; margin-top: 5px; overflow: visible; }
+.chart-grid { stroke: var(--chart-grid); stroke-width: 1; stroke-dasharray: 3 5; }
+.chart-bar {
+  fill: var(--chart-bar);
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: barGrow 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(180ms + var(--i, 0) * 45ms);
+}
+.chart-bar.is-today { fill: var(--chart-bar-hi); }
+@keyframes barGrow { from { transform: scaleY(0.04); opacity: 0.4; } }
+.chart-label { fill: var(--text-3); font-size: 10.5px; font-family: var(--font-ui); }
+.chart-label.is-today { fill: var(--accent-strong); font-weight: 600; }
+
+.pop-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.sync { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); white-space: nowrap; min-width: 0; }
+.sync::before { content: ""; width: 5.5px; height: 5.5px; border-radius: 999px; background: var(--ok); flex: none; }
+.sync.is-syncing { color: var(--text-2); }
+.sync.is-syncing::before { background: var(--accent); animation: syncPulse 900ms ease-in-out infinite; }
+@keyframes syncPulse { 50% { opacity: 0.35; transform: scale(0.72); } }
+.foot-actions { display: flex; align-items: center; gap: 7px; flex: none; }
+
+.btn-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.btn-compact:hover { background: var(--surface-3); }
+.btn-compact:active { transform: translateY(1px); }
+
+.btn-compact.primary {
+  border-color: transparent;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+.btn-compact.primary:hover { filter: brightness(1.06); }
+.btn-compact:disabled,
+.btn-compact[aria-disabled="true"] { opacity: 0.68; cursor: progress; }
+.btn-compact[aria-disabled="true"] { pointer-events: none; }
+.btn-compact.is-spinning .od-icon { animation: spin 700ms linear infinite; }
+
+.detail-head { display: flex; align-items: center; gap: 9px; padding: 2px 0 12px; }
+.detail-title { min-width: 0; flex: 1; }
+.detail-title h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.detail-title p { margin: 1px 0 0; font-size: 11px; color: var(--text-3); }
+
+.detail-card { padding: 16px; }
+.detail-total-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.detail-label { font-size: 11px; color: var(--text-3); }
+.detail-big { margin-top: 3px; font-size: 23px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.detail-big span { font-size: 11.5px; font-weight: 500; color: var(--text-3); letter-spacing: 0; }
+.pct-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.detail-card .bar { height: 8px; margin-top: 12px; }
+.detail-meta { margin: 9px 0 0; font-size: 11px; color: var(--text-3); }
+
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.res-tile { padding: 12px 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.res-tile .q-label { font-size: 11px; }
+.res-tile .res-value { margin-top: 5px; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.res-tile .res-value span { font-size: 11px; font-weight: 500; color: var(--text-3); letter-spacing: 0; }
+
+.activity-card { background: var(--surface-2); border: 1px solid var(--line); border-radius: 18px; padding: 3px 14px; }
+.activity { list-style: none; margin: 0; padding: 0; }
+.activity li { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+.activity li + li { border-top: 1px solid var(--line); }
+.act-badge {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-num);
+}
+.act-badge.a { background: var(--accent-soft); color: var(--accent-strong); }
+.act-badge.b { background: rgba(63, 110, 158, 0.12); color: var(--blue); }
+.act-badge.c { background: rgba(165, 100, 28, 0.12); color: var(--amber); }
+[data-theme="dark"] .act-badge.b { color: #9CC6EE; }
+[data-theme="dark"] .act-badge.c { color: #E0A35C; }
+.act-text { min-width: 0; flex: 1; }
+.act-name { display: block; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.act-meta { display: block; margin-top: 1px; font-size: 10.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.act-cost { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.act-points { flex: none; font-size: 11.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.act-tag {
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--ok-line);
+  background: var(--ok-surface);
+  color: var(--ok-text);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.btn-wide {
+  width: 100%;
+  height: 34px;
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.btn-wide:hover { background: var(--surface-3); }
+
+.pop-body::-webkit-scrollbar, .settings-content::-webkit-scrollbar { width: 10px; }
+.pop-body::-webkit-scrollbar-thumb, .settings-content::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+.window-layer {
+  position: fixed;
+  inset: 30px 0 0 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.window-layer.is-open { opacity: 1; }
+.window-layer.is-closing .app-window { pointer-events: none; }
+
+.app-window {
+  width: min(792px, calc(100vw - 48px));
+  height: min(632px, calc(100vh - 84px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  border-radius: 20px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-window);
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(12px) scale(0.985);
+  transition: opacity 200ms ease, transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.window-layer.is-open .app-window { opacity: 1; transform: none; }
+
+.window-bar {
+  position: relative;
+  flex: none;
+  height: 46px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.traffic { display: flex; align-items: center; gap: 8px; padding-left: 16px; }
+
+.tl {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 0.5px solid rgba(0, 0, 0, 0.14);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.28);
+}
+span.tl { display: block; }
+.tl-red { background: #FF5F57; cursor: pointer; padding: 0; }
+.tl-yellow { background: #FEBC2E; }
+.tl-green { background: #28C840; }
+
+.window-title { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: -0.005em; color: var(--text-2); }
+.window-bar-end { min-width: 0; }
+
+.window-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  height: 100%;
+  padding: 10px;
+  border-right: 1px solid var(--line);
+  background: var(--sidebar);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.nav-item:hover { background: var(--surface-3); color: var(--text); }
+.nav-item.is-active { background: var(--nav-active); color: var(--accent-strong); }
+.nav-item .od-icon { color: currentColor; opacity: 0.9; }
+
+.nav-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 8px 4px;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+.mini-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.nav-foot-text { min-width: 0; }
+.nav-foot-name { display: block; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-foot-plan { display: block; font-size: 10.5px; color: var(--text-3); margin-top: 1px; }
+
+.settings-content { padding: 26px 30px 30px; background: var(--surface); }
+.pane { max-width: 560px; }
+
+.pane-head { margin-bottom: 20px; }
+.eyebrow { margin: 0 0 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; color: var(--text-3); }
+.pane-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.25; }
+.pane-sub { margin: 6px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--text-2); max-width: 46ch; }
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--ok-line);
+  background: var(--ok-surface);
+}
+.status-orb {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--ok-text);
+}
+.status-text { min-width: 0; flex: 1; }
+.status-title { display: block; font-size: 12.5px; font-weight: 600; color: var(--ok-text); }
+.status-meta { display: block; margin-top: 1px; font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--ok-line);
+  color: var(--ok-text);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.status-pill::before { content: ""; width: 4.5px; height: 4.5px; border-radius: 999px; background: var(--ok); }
+
+.account-form { display: block; }
+
+.field + .field { margin-top: 15px; }
+.field label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text); }
+
+.input, .select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.input::placeholder { color: var(--text-3); }
+.input:hover, .select:hover { border-color: var(--text-3); }
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+.field.is-invalid .input { border-color: var(--danger); }
+.field.is-invalid .input:focus { box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.12); }
+
+.help { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: var(--text-3); }
+
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--danger);
+}
+.field-error .od-icon { margin-top: 1px; }
+
+.input-wrap { position: relative; }
+.input-wrap .input { padding-right: 42px; }
+.reveal {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.reveal:hover { background: var(--surface-3); color: var(--text); }
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.form-note { margin: 0; font-size: 11px; color: var(--text-3); }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 150ms ease, opacity 150ms ease;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary:disabled { opacity: 0.72; cursor: progress; }
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 700ms linear infinite;
+}
+
+.success-strip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ok-line);
+  background: var(--ok-surface);
+  color: var(--ok-text);
+  font-size: 11.5px;
+  font-weight: 500;
+  animation: stripIn 220ms ease-out both;
+}
+@keyframes stripIn { from { opacity: 0; transform: translateY(-3px); } }
+
+.group { margin-top: 18px; }
+.group-title { margin: 0 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--text-3); }
+.group-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 15px;
+  min-height: 58px;
+}
+.setting-row + .setting-row { border-top: 1px solid var(--line); }
+.setting-text { min-width: 0; }
+.setting-label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text); }
+.setting-help { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--text-3); max-width: 34ch; }
+.setting-control { flex: none; display: flex; align-items: center; gap: 8px; }
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--surface-3);
+}
+.segmented button {
+  height: 27px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button[aria-pressed="true"] {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(3, 20, 14, 0.12);
+}
+
+.switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--switch-off);
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--switch-knob);
+  box-shadow: 0 1px 2px rgba(9, 25, 19, 0.28);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); }
+
+.select {
+  width: auto;
+  height: 32px;
+  min-width: 104px;
+  padding: 0 30px 0 10px;
+  font-size: 11.5px;
+  border-radius: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6C66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  cursor: pointer;
+}
+[data-theme="dark"] .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2398A49E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.slider-row { padding: 2px 15px 15px; transition: opacity 150ms ease; }
+.slider-row.is-disabled { opacity: 0.5; }
+.slider-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11.5px; color: var(--text-2); }
+.slider-label output { font-size: 12px; font-weight: 600; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+.range { width: 100%; margin: 8px 0 0; accent-color: var(--accent); cursor: pointer; }
+.range:disabled { cursor: not-allowed; }
+.range-scale { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10.5px; color: var(--text-3); }
+
+.about { text-align: center; padding-top: 4px; }
+.about-mark {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: linear-gradient(160deg, #10503F 0%, #0A2F26 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 10px 24px -14px rgba(3, 20, 15, 0.5);
+}
+.about h2 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.025em; }
+.about-sub { margin: 4px 0 0; font-size: 11.5px; color: var(--text-3); }
+.version-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-top: 9px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.update-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.update-status { font-size: 11px; color: var(--text-3); }
+
+.about-facts {
+  max-width: 430px;
+  margin: 24px auto 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.about-fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.about-fact dt { margin: 0; font-size: 11px; color: var(--text-3); }
+.about-fact dd { margin: 0; font-size: 11.5px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+.copyright { margin: 22px 0 0; font-size: 10.5px; color: var(--text-3); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 70;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 15px;
+  border-radius: 999px;
+  background: rgba(17, 28, 24, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.5);
+  color: #F1F8F4;
+  font-size: 12px;
+  white-space: nowrap;
+  animation: toastIn 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.toast .od-icon { color: #9AE6CB; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+.quit-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 12, 9, 0.52);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+.quit-card {
+  width: min(372px, calc(100vw - 40px));
+  padding: 28px;
+  border-radius: 22px;
+  border: 1px solid var(--panel-border);
+  background: var(--surface);
+  box-shadow: var(--shadow-window);
+  text-align: center;
+  animation: popIn 240ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.quit-mark {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #10503F 0%, #0A2F26 100%);
+}
+.quit-card h2 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+.quit-card p { margin: 8px 0 20px; font-size: 12px; line-height: 1.6; color: var(--text-2); }
+.quit-card .btn-primary { width: 100%; }
+
+[data-theme="dark"] .plan-card {
+  background: radial-gradient(130% 150% at 102% -8%, rgba(120, 222, 190, 0.16), transparent 56%), linear-gradient(155deg, #12463A 0%, #0A3028 100%);
+}
+
+@media (max-width: 860px) {
+  .app-window { width: calc(100vw - 40px); }
+}
+
+@media (max-width: 720px) {
+  .mb-item { display: none; }
+  .pop-head { padding: 13px 14px 11px; }
+  .pop-body { padding: 0 14px 14px; }
+  .pop-foot { padding: 11px 14px 13px; }
+  .settings-content { padding: 22px; }
+  .window-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .settings-nav {
+    flex-direction: row;
+    align-items: center;
+    height: auto;
+    overflow-x: auto;
+    padding: 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    scrollbar-width: none;
+  }
+  .settings-nav::-webkit-scrollbar { display: none; }
+  .nav-item { flex: none; height: 34px; }
+  .nav-foot { display: none; }
+  .pane-head h2 { font-size: 20px; }
+}
+
+@media (max-width: 600px) {
+  .mb-glyph.wifi, .mb-glyph.control { display: none; }
+  .mb-clock { padding: 0 4px; font-size: 12px; }
+  .menubar { padding: 0 8px; }
+}
+
+@media (max-width: 520px) {
+  .app-window { width: calc(100vw - 20px); height: calc(100vh - 66px); border-radius: 18px; }
+  .window-layer { padding: 10px; }
+  .window-bar { height: 44px; }
+  .traffic { padding-left: 13px; }
+  .popover { max-height: calc(100vh - 48px); }
+  .plan-card { padding: 15px 16px; gap: 10px; }
+  .usage-ring { width: 92px; height: 92px; }
+  .ring-num { font-size: 24px; }
+  .ring-cap { font-size: 10px; }
+  .detail-big { font-size: 21px; }
+  .status-pill { display: none; }
+  .settings-content { padding: 18px; }
+  .pane-sub { font-size: 12px; }
+  .setting-row { gap: 12px; flex-wrap: wrap; row-gap: 9px; }
+  .setting-row.has-segmented .setting-control { flex: 1 1 100%; }
+  .segmented { width: 100%; }
+  .segmented button { flex: 1 1 0; }
+  .setting-help { max-width: 24ch; }
+}
+
+@media (max-width: 380px) {
+  .pop-head { padding: 12px 12px 10px; }
+  .pop-body { padding: 0 12px 12px; }
+  .pop-foot { padding: 10px 12px 12px; }
+  .plan-card { padding: 14px; }
+  .usage-ring { width: 84px; height: 84px; }
+  .ring-num { font-size: 22px; }
+  .plan-name { font-size: 18px; }
+  .price-num { font-size: 22px; }
+  .chart-label { font-size: 12px; }
+  .btn-compact { padding: 0 9px; }
+  .segmented button { padding: 0 7px; }
+  .form-actions { align-items: stretch; flex-direction: column; }
+  .form-actions .btn-primary { width: 100%; }
+  .res-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 340px) {
+  .quota-card.quota-split { grid-template-columns: 1fr; }
+  .quota-col + .quota-col {
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .chart-label { font-size: 13.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="wallpaper" aria-hidden="true"></div>
+
+  <header class="menubar">
+    <div class="menubar-left">
+      <span class="apple" aria-hidden="true">
+        <svg class="od-icon i-15" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M15.7 7.1c.9-1 1.5-2.4 1.3-3.8-1.2.1-2.7.8-3.6 1.8-.8.9-1.5 2.3-1.3 3.7 1.4.1 2.7-.7 3.6-1.7Z" fill="currentColor" stroke="none"/>
+          <path d="M18.6 12.6c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.8-1.1-2.8-3.4Z" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <button class="mb-app" id="appMenuButton" aria-haspopup="menu" aria-expanded="false" aria-controls="appMenu">CoRouter</button>
+      <span class="mb-item">文件</span>
+      <span class="mb-item">编辑</span>
+      <span class="mb-item">显示</span>
+      <span class="mb-item">窗口</span>
+      <span class="mb-item">帮助</span>
+    </div>
+    <div class="menubar-right">
+      <button class="status-item" id="statusItem" aria-haspopup="dialog" aria-expanded="true" aria-controls="popover" aria-label="CoRouter，5 小时额度剩余 96%，点击查看套餐与用量">
+        <svg class="status-ring" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+          <circle class="ring-track" cx="9" cy="9" r="6.3" fill="none" stroke-width="2.1"/>
+          <circle class="ring-arc" cx="9" cy="9" r="6.3" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-dasharray="39.58" stroke-dashoffset="1.58" transform="rotate(-90 9 9)"/>
+          <circle class="ring-dot" cx="9" cy="9" r="1.25"/>
+        </svg>
+        <span class="status-pct" id="statusPct">96%</span>
+      </button>
+      <span class="mb-glyph control" aria-hidden="true">
+        <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/>
+          <path d="M4 17h4"/><path d="M12 17h8"/><circle cx="10" cy="17" r="2"/>
+        </svg>
+      </span>
+      <span class="mb-glyph wifi" aria-hidden="true">
+        <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M4.5 9.5a11 11 0 0 1 15 0"/><path d="M7.5 13a7 7 0 0 1 9 0"/><path d="M10.4 16.4a3 3 0 0 1 3.2 0"/><circle cx="12" cy="19" r="0.8" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span class="mb-glyph" aria-hidden="true">
+        <svg class="od-icon i-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <rect x="3" y="8" width="16" height="8" rx="2.2"/><path d="M21.5 10.5v3"/><rect x="5" y="10" width="10.5" height="4" rx="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span class="mb-clock" id="menuClock">11月6日 周五 21:42</span>
+    </div>
+  </header>
+
+  <div class="app-menu" id="appMenu" role="menu" aria-label="CoRouter 菜单" hidden>
+    <button class="menu-item" type="button" role="menuitem" data-action="about">关于 CoRouter</button>
+    <div class="menu-sep" role="separator"></div>
+    <button class="menu-item" type="button" role="menuitem" data-action="settings">设置…<span class="shortcut">⌘,</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-action="refresh">刷新用量<span class="shortcut">⌘R</span></button>
+    <div class="menu-sep" role="separator"></div>
+    <button class="menu-item" type="button" role="menuitem" data-action="quit">退出 CoRouter<span class="shortcut">⌘Q</span></button>
+  </div>
+
+  <aside class="popover" id="popover" role="dialog" aria-modal="false" aria-label="CoRouter 套餐与用量" tabindex="-1">
+    <div class="pop-head">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
+            <circle cx="15" cy="15" r="8.4" fill="none" stroke="rgba(255,255,255,0.26)" stroke-width="2.8"/>
+            <circle cx="15" cy="15" r="8.4" fill="none" stroke="#9AE6CB" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="52.78" stroke-dashoffset="16.89" transform="rotate(-90 15 15)"/>
+            <circle cx="15" cy="15" r="1.7" fill="#EAF8F2"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">CoRouter</span>
+          <span class="brand-badge" aria-hidden="true">Go</span>
+        </span>
+      </div>
+      <div class="pop-head-actions">
+        <button class="icon-btn" id="openSettingsBtn" type="button" aria-label="打开设置" title="设置">
+          <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="3.1"/>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.06-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="pop-body od-scroll" id="popBody">
+      <div class="pop-view" id="viewOverview">
+        <section class="plan-card" aria-label="当前订阅">
+          <div class="plan-info">
+            <span class="plan-eyebrow">当前订阅</span>
+            <div class="plan-name-row">
+              <h2 class="plan-name">Go</h2>
+              <span class="plan-status">生效中</span>
+            </div>
+            <div class="plan-price">
+              <span class="price-num num">$7</span>
+              <span class="price-unit">/ 月</span>
+            </div>
+            <span class="plan-meta">
+              <svg class="od-icon i-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false">
+                <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>
+              </svg>
+              年付 $84 · 11月20日到期
+            </span>
+          </div>
+          <div class="usage-ring">
+            <svg class="ring-svg" viewBox="0 0 104 104" role="img" aria-label="5 小时额度剩余 96%">
+              <circle class="ring-track" cx="52" cy="52" r="42" fill="none" stroke-width="7"/>
+              <circle class="ring-value" cx="52" cy="52" r="42" fill="none" stroke-width="7"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-number-line"><span class="ring-num num" id="ringNum">96</span><span class="ring-pct">%</span></span>
+              <span class="ring-cap">5 hour</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="section-head">
+          <h3>Design Plan 额度</h3>
+          <button class="text-btn" id="popDetailBtn" type="button">
+            用量明细
+            <svg class="od-icon i-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <div class="quota-card quota-split">
+          <div class="quota-col">
+            <span class="q-label"><span class="q-dot a"></span>5 小时额度剩余</span>
+            <div class="q-big num">96%</div>
+            <div class="bar"><span style="width:96%"></span></div>
+            <p class="q-meta">2 小时 24 分后重置</p>
+          </div>
+          <div class="quota-col">
+            <span class="q-label"><span class="q-dot b"></span>7 天额度剩余</span>
+            <div class="q-big num">89%</div>
+            <div class="bar bar-b"><span style="width:89%"></span></div>
+            <p class="q-meta">4 天 10 小时后重置</p>
+          </div>
+          <div class="quota-foot">
+            <span class="q-label"><span class="q-dot c"></span>按量额度</span>
+            <strong class="num">$1.00</strong>
+            <span class="muted">可用</span>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <h3>近 7 天用量</h3>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-head">
+            <div>
+              <h3>Token 消耗</h3>
+              <p class="chart-sub">总计 522.32M · 日均 74.62M</p>
+            </div>
+            <span class="chip">Token</span>
+          </div>
+          <svg class="chart-svg" viewBox="0 0 340 120" role="img" aria-label="近 7 天 Token 消耗：10月31日 48.2M，11月1日 62.4M，11月2日 71.6M，11月3日 88.1M，11月4日 76.5M，11月5日 97.8M，今天 77.72M">
+            <line class="chart-grid" x1="14" y1="40" x2="326" y2="40"/>
+            <line class="chart-grid" x1="14" y1="68" x2="326" y2="68"/>
+            <rect class="chart-bar" x="16" y="62" width="24" height="32" rx="7" style="--i:0"><title>10月31日 · 48.2M Token</title></rect>
+            <rect class="chart-bar" x="64" y="53" width="24" height="41" rx="7" style="--i:1"><title>11月1日 · 62.4M Token</title></rect>
+            <rect class="chart-bar" x="112" y="47" width="24" height="47" rx="7" style="--i:2"><title>11月2日 · 71.6M Token</title></rect>
+            <rect class="chart-bar" x="160" y="36" width="24" height="58" rx="7" style="--i:3"><title>11月3日 · 88.1M Token</title></rect>
+            <rect class="chart-bar" x="208" y="44" width="24" height="50" rx="7" style="--i:4"><title>11月4日 · 76.5M Token</title></rect>
+            <rect class="chart-bar" x="256" y="30" width="24" height="64" rx="7" style="--i:5"><title>11月5日 · 97.8M Token</title></rect>
+            <rect class="chart-bar is-today" x="304" y="43" width="24" height="51" rx="7" style="--i:6"><title>今天 · 77.72M Token</title></rect>
+            <text class="chart-label" x="28" y="112" text-anchor="middle">六</text>
+            <text class="chart-label" x="76" y="112" text-anchor="middle">日</text>
+            <text class="chart-label" x="124" y="112" text-anchor="middle">一</text>
+            <text class="chart-label" x="172" y="112" text-anchor="middle">二</text>
+            <text class="chart-label" x="220" y="112" text-anchor="middle">三</text>
+            <text class="chart-label" x="268" y="112" text-anchor="middle">四</text>
+            <text class="chart-label is-today" x="316" y="112" text-anchor="middle">今</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="pop-view" id="viewDetail" hidden>
+        <div class="detail-head">
+          <button class="icon-btn" id="backOverviewBtn" type="button" aria-label="返回概览">
+            <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6"/></svg>
+          </button>
+          <div class="detail-title">
+            <h2>用量明细</h2>
+            <p>近 7 天 · 10月31日 – 11月6日</p>
+          </div>
+          <span class="chip">7 天</span>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-total-row">
+            <div>
+              <span class="detail-label">总 Token</span>
+              <div class="detail-big num">522.32M</div>
+            </div>
+            <span class="pct-pill">Design Plan</span>
+          </div>
+          <p class="detail-meta">全部请求由 Design Plan 额度抵扣</p>
+        </div>
+
+        <div class="section-head">
+          <h3>Token 明细</h3>
+        </div>
+        <div class="res-grid">
+          <div class="res-tile">
+            <span class="q-label"><span class="q-dot a"></span>输入 Token</span>
+            <div class="res-value num">517.91M</div>
+          </div>
+          <div class="res-tile">
+            <span class="q-label"><span class="q-dot b"></span>输出 Token</span>
+            <div class="res-value num">4.4M</div>
+          </div>
+          <div class="res-tile">
+            <span class="q-label"><span class="q-dot c"></span>缓存读取</span>
+            <div class="res-value num">509.8M</div>
+          </div>
+          <div class="res-tile">
+            <span class="q-label"><span class="q-dot b"></span>缓存写入</span>
+            <div class="res-value num">30.72K</div>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <h3>最近请求</h3>
+        </div>
+        <div class="activity-card">
+          <ul class="activity">
+            <li>
+              <span class="act-badge a">DS</span>
+              <span class="act-text"><span class="act-name">deepseek-v4.1-flash</span><span class="act-meta">今天 08:43 · 输入 90,251 · 输出 1,881</span></span>
+              <span class="act-cost">
+                <span class="act-points">−$0.0022</span>
+                <span class="act-tag">Design Plan</span>
+              </span>
+            </li>
+            <li>
+              <span class="act-badge a">DS</span>
+              <span class="act-text"><span class="act-name">deepseek-v4.1-flash</span><span class="act-meta">今天 08:43 · 输入 89,520 · 输出 682</span></span>
+              <span class="act-cost">
+                <span class="act-points">−$0.0018</span>
+                <span class="act-tag">Design Plan</span>
+              </span>
+            </li>
+            <li>
+              <span class="act-badge a">DS</span>
+              <span class="act-text"><span class="act-name">deepseek-v4.1-flash</span><span class="act-meta">今天 08:43 · 输入 88,257 · 输出 1,248</span></span>
+              <span class="act-cost">
+                <span class="act-points">−$0.0022</span>
+                <span class="act-tag">Design Plan</span>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <button class="btn-wide" id="exportBtn" type="button">
+          <svg class="od-icon i-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M12 4v11"/><path d="m8 11 4 4 4-4"/><path d="M5 19h14"/>
+          </svg>
+          导出近 7 天用量 CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="pop-foot">
+      <span class="sync" id="syncText" role="status" aria-live="polite">2 分钟前同步</span>
+      <div class="foot-actions">
+        <button class="btn-compact" id="footRefresh" type="button">
+          <svg class="od-icon i-13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M20 11a8 8 0 1 0-.7 4"/><path d="M20 4v7h-7"/>
+          </svg>
+          刷新
+        </button>
+        <button class="btn-compact primary" id="footSettings" type="button">
+          <svg class="od-icon i-13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 3.5v2M12 18.5v2M4.8 7.9l1.7 1M17.5 15.1l1.7 1M4.8 16.1l1.7-1M17.5 8.9l1.7-1"/>
+          </svg>
+          设置
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="window-layer" id="settingsLayer" hidden>
+    <div class="app-window" id="settingsWindow" role="dialog" aria-modal="false" aria-labelledby="settingsTitle">
+      <div class="window-bar">
+        <div class="traffic">
+          <button class="tl tl-red" id="closeSettings" type="button" aria-label="关闭设置"></button>
+          <span class="tl tl-yellow" aria-hidden="true"></span>
+          <span class="tl tl-green" aria-hidden="true"></span>
+        </div>
+        <h1 class="window-title" id="settingsTitle">设置</h1>
+        <div class="window-bar-end"></div>
+      </div>
+
+      <div class="window-body">
+        <nav class="settings-nav" aria-label="设置分类">
+          <button class="nav-item is-active" type="button" data-pane="account" aria-current="page">
+            <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.3 3.6-5.2 7-5.2s6.2 1.9 7 5.2"/>
+            </svg>
+            账户
+          </button>
+          <button class="nav-item" type="button" data-pane="general">
+            <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false">
+              <path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/>
+              <path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/>
+            </svg>
+            通用
+          </button>
+          <button class="nav-item" type="button" data-pane="notifications">
+            <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M18 9a6 6 0 0 0-12 0c0 4.5-1.6 5.6-2 6h16c-.4-.4-2-1.5-2-6Z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/>
+            </svg>
+            通知
+          </button>
+          <button class="nav-item" type="button" data-pane="about">
+            <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/>
+            </svg>
+            关于
+          </button>
+          <div class="nav-foot">
+            <span class="mini-avatar" aria-hidden="true">RY</span>
+            <span class="nav-foot-text">
+              <span class="nav-foot-name">Ryan Y</span>
+              <span class="nav-foot-plan">Go · 正常</span>
+            </span>
+          </div>
+        </nav>
+
+        <div class="settings-content od-scroll" id="settingsContent">
+          <section class="pane" id="pane-account">
+            <header class="pane-head">
+              <p class="eyebrow">连接</p>
+              <h2>账户与登录</h2>
+              <p class="pane-sub">连接你的 CoRouter 工作区，同步套餐额度与实时用量。</p>
+            </header>
+
+            <div class="status-card">
+              <span class="status-orb" aria-hidden="true">
+                <svg class="od-icon i-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12 4 4 10-10"/></svg>
+              </span>
+              <span class="status-text">
+                <span class="status-title">工作区已连接</span>
+                <span class="status-meta" id="connectionMeta">上次同步 2 分钟前 · 示例工作区</span>
+              </span>
+              <span class="status-pill">正常</span>
+            </div>
+
+            <form class="account-form" id="accountForm" novalidate>
+              <div class="field" data-field="workspace">
+                <label for="workspaceUrl">服务地址</label>
+                <input class="input" id="workspaceUrl" type="url" value="https://corouter.open-design.ai" autocomplete="url" spellcheck="false" aria-describedby="errWorkspace">
+                <p class="help">用于连接 CoRouter 并拉取套餐额度与用量。</p>
+                <p class="field-error" id="errWorkspace" hidden>
+                  <svg class="od-icon i-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5"/><circle cx="12" cy="16.2" r="0.8" fill="currentColor" stroke="none"/></svg>
+                  请输入以 https:// 开头的有效地址。
+                </p>
+              </div>
+
+              <div class="field" data-field="email">
+                <label for="accountEmail">登录邮箱</label>
+                <input class="input" id="accountEmail" type="email" value="ryan@corouter.open-design.ai" autocomplete="email" spellcheck="false" aria-describedby="errEmail">
+                <p class="help">接收套餐到期与用量提醒。</p>
+                <p class="field-error" id="errEmail" hidden>
+                  <svg class="od-icon i-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5"/><circle cx="12" cy="16.2" r="0.8" fill="currentColor" stroke="none"/></svg>
+                  请输入有效的邮箱地址。
+                </p>
+              </div>
+
+              <div class="field" data-field="token">
+                <label for="accessToken">访问令牌</label>
+                <div class="input-wrap">
+                  <input class="input" id="accessToken" type="password" value="cr_demo_7c41e9d2b8f0" autocomplete="off" spellcheck="false" aria-describedby="errToken">
+                  <button class="reveal" id="toggleToken" type="button" aria-label="显示访问令牌" aria-pressed="false">
+                    <svg class="od-icon i-15 eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                      <path d="M2.8 12S6.2 5.8 12 5.8 21.2 12 21.2 12 17.8 18.2 12 18.2 2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.8"/>
+                    </svg>
+                    <svg class="od-icon i-15 eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" hidden>
+                      <path d="M3 3l18 18"/><path d="M10.5 6.1a8.7 8.7 0 0 1 1.5-.1c5.8 0 9.2 6 9.2 6a15 15 0 0 1-2.7 3.5"/><path d="M6.2 7.1A15 15 0 0 0 2.8 12S6.2 18 12 18c1.4 0 2.7-.3 3.8-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="help">仅用于验证工作区访问权限。</p>
+                <p class="field-error" id="errToken" hidden>
+                  <svg class="od-icon i-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5"/><circle cx="12" cy="16.2" r="0.8" fill="currentColor" stroke="none"/></svg>
+                  访问令牌至少需要 12 个字符。
+                </p>
+              </div>
+
+              <div class="form-actions">
+                <p class="form-note" id="formNote">上次验证：2 分钟前</p>
+                <button class="btn-primary" id="saveAccount" type="submit">
+                  <span class="spinner" id="saveSpinner" hidden></span>
+                  <span id="saveLabel">保存并验证</span>
+                </button>
+              </div>
+
+              <div class="success-strip" id="accountSuccess" role="status" hidden>
+                <svg class="od-icon i-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12 4 4 10-10"/></svg>
+                连接成功，用量已同步。
+              </div>
+            </form>
+          </section>
+
+          <section class="pane" id="pane-general" hidden>
+            <header class="pane-head">
+              <p class="eyebrow">运行</p>
+              <h2>通用</h2>
+              <p class="pane-sub">调整 CoRouter 在菜单栏中的显示方式与同步节奏。</p>
+            </header>
+
+            <div class="group">
+              <p class="group-title">外观</p>
+              <div class="group-card">
+                <div class="setting-row has-segmented">
+                  <div class="setting-text">
+                    <span class="setting-label">主题</span>
+                    <span class="setting-help">跟随系统，或固定使用浅色或深色。</span>
+                  </div>
+                  <div class="setting-control">
+                    <div class="segmented" role="group" aria-label="主题">
+                      <button type="button" data-theme-choice="system" aria-pressed="true">跟随系统</button>
+                      <button type="button" data-theme-choice="light" aria-pressed="false">浅色</button>
+                      <button type="button" data-theme-choice="dark" aria-pressed="false">深色</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting-row has-segmented">
+                  <div class="setting-text">
+                    <span class="setting-label">菜单栏显示</span>
+                    <span class="setting-help">在图标旁显示 7 天剩余额度百分比。</span>
+                  </div>
+                  <div class="setting-control">
+                    <div class="segmented" role="group" aria-label="菜单栏显示">
+                      <button type="button" data-display="percent" aria-pressed="true">百分比</button>
+                      <button type="button" data-display="icon" aria-pressed="false">仅图标</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="group">
+              <p class="group-title">启动与同步</p>
+              <div class="group-card">
+                <div class="setting-row">
+                  <div class="setting-text">
+                    <span class="setting-label">登录时自动启动</span>
+                    <span class="setting-help">登录 Mac 后自动在菜单栏运行。</span>
+                  </div>
+                  <div class="setting-control">
+                    <button class="switch" id="switchLaunch" type="button" role="switch" aria-checked="true" aria-label="登录时自动启动"></button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-text">
+                    <span class="setting-label">自动刷新用量</span>
+                    <span class="setting-help">按固定间隔在后台同步数据。</span>
+                  </div>
+                  <div class="setting-control">
+                    <select class="select" id="intervalSelect" aria-label="自动刷新间隔">
+                      <option value="5">5 分钟</option>
+                      <option value="15" selected>15 分钟</option>
+                      <option value="30">30 分钟</option>
+                      <option value="60">60 分钟</option>
+                    </select>
+                    <button class="switch" id="switchAutoRefresh" type="button" role="switch" aria-checked="true" aria-label="自动刷新用量"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pane" id="pane-notifications" hidden>
+            <header class="pane-head">
+              <p class="eyebrow">提醒</p>
+              <h2>通知</h2>
+              <p class="pane-sub">在剩余额度不足或套餐即将到期时，让系统提醒你。</p>
+            </header>
+
+            <div class="group">
+              <p class="group-title">系统通知</p>
+              <div class="group-card">
+                <div class="setting-row">
+                  <div class="setting-text">
+                    <span class="setting-label">额度不足提醒</span>
+                    <span class="setting-help">剩余额度低于阈值时发送系统通知。</span>
+                  </div>
+                  <div class="setting-control">
+                    <button class="switch" id="switchUsageAlert" type="button" role="switch" aria-checked="true" aria-label="额度不足提醒"></button>
+                  </div>
+                </div>
+                <div class="slider-row" id="thresholdRow">
+                  <div class="slider-label">
+                    <span>提醒阈值（剩余额度）</span>
+                    <output id="thresholdOut" for="threshold">80%</output>
+                  </div>
+                  <input class="range" id="threshold" type="range" min="50" max="100" step="5" value="80" aria-label="剩余额度提醒阈值">
+                  <div class="range-scale"><span>50%</span><span>100%</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-text">
+                    <span class="setting-label">本期结束前提醒</span>
+                    <span class="setting-help">在本期结束前 3 天提醒我。</span>
+                  </div>
+                  <div class="setting-control">
+                    <button class="switch" id="switchRenewal" type="button" role="switch" aria-checked="true" aria-label="本期结束前提醒"></button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-text">
+                    <span class="setting-label">每周用量摘要</span>
+                    <span class="setting-help">每周一发送上周用量概览。</span>
+                  </div>
+                  <div class="setting-control">
+                    <button class="switch" id="switchWeekly" type="button" role="switch" aria-checked="false" aria-label="每周用量摘要"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pane" id="pane-about" hidden>
+            <div class="about">
+              <span class="about-mark" aria-hidden="true">
+                <svg width="72" height="72" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
+                  <circle cx="15" cy="15" r="8.4" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="2.6"/>
+                  <circle cx="15" cy="15" r="8.4" fill="none" stroke="#9AE6CB" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="52.78" stroke-dashoffset="16.89" transform="rotate(-90 15 15)"/>
+                  <circle cx="15" cy="15" r="1.7" fill="#EAF8F2"/>
+                </svg>
+              </span>
+              <h2>CoRouter</h2>
+              <p class="about-sub">菜单栏套餐与用量</p>
+              <span class="version-pill">版本 2.4.1 (2400)</span>
+
+              <div class="update-row">
+                <button class="btn-compact" id="checkUpdate" type="button">
+                  <span class="spinner" id="updateSpinner" hidden></span>
+                  <span id="updateLabel">检查更新</span>
+                </button>
+                <span class="update-status" id="updateStatus" role="status">上次检查：1 小时前</span>
+              </div>
+
+              <dl class="about-facts">
+                <div class="about-fact"><dt>运行方式</dt><dd>仅菜单栏</dd></div>
+                <div class="about-fact"><dt>同步间隔</dt><dd id="aboutInterval">15 分钟</dd></div>
+                <div class="about-fact"><dt>凭证存储</dt><dd>仅本机</dd></div>
+              </dl>
+              <p class="copyright">© 2026 CoRouter</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <svg class="od-icon i-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12 4 4 10-10"/></svg>
+    <span id="toastText"></span>
+  </div>
+
+  <div class="quit-layer" id="quitLayer" hidden>
+    <div class="quit-card" role="alertdialog" aria-modal="true" aria-labelledby="quitTitle">
+      <span class="quit-mark" aria-hidden="true">
+        <svg width="54" height="54" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
+          <circle cx="15" cy="15" r="8.4" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="2.6"/>
+          <circle cx="15" cy="15" r="8.4" fill="none" stroke="#9AE6CB" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="52.78" stroke-dashoffset="16.89" transform="rotate(-90 15 15)"/>
+          <circle cx="15" cy="15" r="1.7" fill="#EAF8F2"/>
+        </svg>
+      </span>
+      <h2 id="quitTitle">CoRouter 已退出</h2>
+      <p>菜单栏图标与套餐同步已暂停。刷新页面即可重新启动这个原型。</p>
+      <button class="btn-primary" id="restartApp" type="button">重新启动</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const byId = (id) => document.getElementById(id);
+  const all = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+  const root = document.documentElement;
+  const statusItem = byId('statusItem');
+  const statusPct = byId('statusPct');
+  const popover = byId('popover');
+  const popBody = byId('popBody');
+  const viewOverview = byId('viewOverview');
+  const viewDetail = byId('viewDetail');
+  const appMenuButton = byId('appMenuButton');
+  const appMenu = byId('appMenu');
+  const menuClock = byId('menuClock');
+
+  const settingsLayer = byId('settingsLayer');
+  const settingsContent = byId('settingsContent');
+  const closeSettingsBtn = byId('closeSettings');
+  const navItems = all('.nav-item');
+  const panes = all('.pane');
+
+  const syncText = byId('syncText');
+  const connectionMeta = byId('connectionMeta');
+  const openSettingsBtn = byId('openSettingsBtn');
+  const footSettings = byId('footSettings');
+  const footRefresh = byId('footRefresh');
+  const popDetailBtn = byId('popDetailBtn');
+  const backOverviewBtn = byId('backOverviewBtn');
+  const exportBtn = byId('exportBtn');
+
+  const themeButtons = all('[data-theme-choice]');
+  const displayButtons = all('[data-display]');
+  const switchLaunch = byId('switchLaunch');
+  const switchAutoRefresh = byId('switchAutoRefresh');
+  const switchUsageAlert = byId('switchUsageAlert');
+  const switchRenewal = byId('switchRenewal');
+  const switchWeekly = byId('switchWeekly');
+  const intervalSelect = byId('intervalSelect');
+  const threshold = byId('threshold');
+  const thresholdRow = byId('thresholdRow');
+  const thresholdOut = byId('thresholdOut');
+  const aboutInterval = byId('aboutInterval');
+
+  const accountForm = byId('accountForm');
+  const fieldEls = {
+    workspace: document.querySelector('[data-field="workspace"]'),
+    email: document.querySelector('[data-field="email"]'),
+    token: document.querySelector('[data-field="token"]')
+  };
+  const workspaceUrl = byId('workspaceUrl');
+  const accountEmail = byId('accountEmail');
+  const accessToken = byId('accessToken');
+  const toggleToken = byId('toggleToken');
+  const errWorkspace = byId('errWorkspace');
+  const errEmail = byId('errEmail');
+  const errToken = byId('errToken');
+  const saveAccount = byId('saveAccount');
+  const saveSpinner = byId('saveSpinner');
+  const saveLabel = byId('saveLabel');
+  const accountSuccess = byId('accountSuccess');
+  const formNote = byId('formNote');
+
+  const checkUpdate = byId('checkUpdate');
+  const updateSpinner = byId('updateSpinner');
+  const updateLabel = byId('updateLabel');
+  const updateStatus = byId('updateStatus');
+
+  const toast = byId('toast');
+  const toastText = byId('toastText');
+  const quitLayer = byId('quitLayer');
+  const restartApp = byId('restartApp');
+
+  const darkMql = window.matchMedia('(prefers-color-scheme: dark)');
+  const STORE_KEY = 'corouter.prefs.v1';
+  const DEFAULT_PREFS = {
+    theme: 'system',
+    display: 'percent',
+    launchAtLogin: true,
+    autoRefresh: true,
+    interval: '15',
+    usageAlert: true,
+    threshold: 80,
+    renewalReminder: true,
+    weeklyDigest: false
+  };
+
+  function readPrefs() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  const prefs = Object.assign({}, DEFAULT_PREFS, readPrefs());
+
+  if (!['system', 'light', 'dark'].includes(prefs.theme)) prefs.theme = 'system';
+  if (!['percent', 'icon'].includes(prefs.display)) prefs.display = 'percent';
+  prefs.launchAtLogin = Boolean(prefs.launchAtLogin);
+  prefs.autoRefresh = Boolean(prefs.autoRefresh);
+  if (!['5', '15', '30', '60'].includes(String(prefs.interval))) prefs.interval = '15';
+  prefs.usageAlert = Boolean(prefs.usageAlert);
+  prefs.threshold = Number(prefs.threshold);
+  if (!Number.isFinite(prefs.threshold) || prefs.threshold < 50 || prefs.threshold > 100) prefs.threshold = 80;
+  prefs.renewalReminder = Boolean(prefs.renewalReminder);
+  prefs.weeklyDigest = Boolean(prefs.weeklyDigest);
+
+  function savePrefs() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        theme: prefs.theme,
+        display: prefs.display,
+        launchAtLogin: prefs.launchAtLogin,
+        autoRefresh: prefs.autoRefresh,
+        interval: prefs.interval,
+        usageAlert: prefs.usageAlert,
+        threshold: prefs.threshold,
+        renewalReminder: prefs.renewalReminder,
+        weeklyDigest: prefs.weeklyDigest
+      }));
+    } catch (error) {}
+  }
+
+  function resolvedTheme() {
+    if (prefs.theme === 'dark') return 'dark';
+    if (prefs.theme === 'light') return 'light';
+    return darkMql.matches ? 'dark' : 'light';
+  }
+
+  function applyTheme() {
+    root.dataset.theme = resolvedTheme();
+  }
+
+  function syncThemeButtons() {
+    themeButtons.forEach((button) => {
+      const active = button.dataset.themeChoice === prefs.theme;
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function syncDisplayButtons() {
+    displayButtons.forEach((button) => {
+      const active = button.dataset.display === prefs.display;
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function applyDisplay() {
+    statusItem.classList.toggle('hide-pct', prefs.display === 'icon');
+    statusItem.setAttribute('aria-label', prefs.display === 'percent'
+      ? 'CoRouter，5 小时额度剩余 96%，点击查看套餐与用量'
+      : 'CoRouter，点击查看套餐与用量');
+  }
+
+  function setSwitch(el, on) {
+    el.setAttribute('aria-checked', String(Boolean(on)));
+  }
+
+  function syncControls() {
+    syncThemeButtons();
+    syncDisplayButtons();
+    setSwitch(switchLaunch, prefs.launchAtLogin);
+    setSwitch(switchAutoRefresh, prefs.autoRefresh);
+    setSwitch(switchUsageAlert, prefs.usageAlert);
+    setSwitch(switchRenewal, prefs.renewalReminder);
+    setSwitch(switchWeekly, prefs.weeklyDigest);
+    intervalSelect.value = String(prefs.interval);
+    intervalSelect.disabled = !prefs.autoRefresh;
+    threshold.value = String(prefs.threshold);
+    thresholdOut.textContent = prefs.threshold + '%';
+    threshold.disabled = !prefs.usageAlert;
+    thresholdRow.classList.toggle('is-disabled', !prefs.usageAlert);
+    aboutInterval.textContent = prefs.interval + ' 分钟';
+  }
+
+  let toastTimer = null;
+  let refreshTimer = null;
+  let accountTimer = null;
+  let updateTimer = null;
+  function showToast(message) {
+    toastText.textContent = message;
+    toast.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.hidden = true;
+      toastTimer = null;
+    }, 2400);
+  }
+
+  let refreshBusy = false;
+  function refreshUsage() {
+    if (refreshBusy) return;
+    refreshBusy = true;
+    footRefresh.setAttribute('aria-disabled', 'true');
+    footRefresh.classList.add('is-spinning');
+    popover.setAttribute('aria-busy', 'true');
+    syncText.classList.add('is-syncing');
+    syncText.textContent = '正在同步…';
+    refreshTimer = setTimeout(() => {
+      refreshTimer = null;
+      refreshBusy = false;
+      footRefresh.removeAttribute('aria-disabled');
+      footRefresh.classList.remove('is-spinning');
+      popover.removeAttribute('aria-busy');
+      syncText.classList.remove('is-syncing');
+      syncText.textContent = '刚刚同步';
+      connectionMeta.textContent = '刚刚同步 · 示例用户\'s workspace';
+      showToast('用量已更新');
+    }, 720);
+  }
+
+  let popoverCloseTimer = null;
+  let settingsTimer = null;
+  let settingsFocusTimer = null;
+  let settingsTrigger = null;
+  let currentPane = 'account';
+
+  function positionPopover() {
+    if (popover.hidden) return;
+    const rect = statusItem.getBoundingClientRect();
+    const compact = window.innerWidth < 520;
+    const width = Math.min(392, window.innerWidth - 24);
+    popover.style.width = width + 'px';
+    popover.classList.toggle('is-compact', compact);
+
+    let left = 12;
+    let caret = width / 2;
+    if (!compact) {
+      const desiredLeft = rect.left + rect.width / 2 - width + 68;
+      left = Math.min(Math.max(12, desiredLeft), window.innerWidth - width - 12);
+      caret = Math.min(Math.max(26, rect.left + rect.width / 2 - left), width - 26);
+    }
+
+    const top = Math.max(38, rect.bottom + 10);
+    popover.style.left = Math.round(left) + 'px';
+    popover.style.top = Math.round(top) + 'px';
+    popover.style.setProperty('--caret-x', Math.round(caret) + 'px');
+    popover.style.maxHeight = Math.max(240, window.innerHeight - top - 16) + 'px';
+  }
+
+  function openPopover(options = {}) {
+    const focus = Boolean(options.focus);
+    if (popoverCloseTimer) {
+      clearTimeout(popoverCloseTimer);
+      popoverCloseTimer = null;
+    }
+    closeAppMenu();
+    popover.hidden = false;
+    popover.classList.remove('is-closing');
+    statusItem.setAttribute('aria-expanded', 'true');
+    positionPopover();
+    if (focus) popover.focus({ preventScroll: true });
+  }
+
+  function closePopover(options = {}) {
+    if (popover.hidden) return;
+    const restoreFocus = Boolean(options.restoreFocus);
+    const immediate = Boolean(options.immediate);
+    popover.classList.add('is-closing');
+    statusItem.setAttribute('aria-expanded', 'false');
+    const finish = () => {
+      popover.hidden = true;
+      popover.classList.remove('is-closing');
+      popoverCloseTimer = null;
+    };
+    if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finish();
+    } else {
+      if (popoverCloseTimer) clearTimeout(popoverCloseTimer);
+      popoverCloseTimer = setTimeout(finish, 145);
+    }
+    if (restoreFocus) statusItem.focus({ preventScroll: true });
+  }
+
+  function togglePopover() {
+    if (popover.hidden) {
+      openPopover({ focus: true });
+    } else {
+      closePopover({ restoreFocus: true });
+    }
+  }
+
+  function showDetail(show) {
+    viewOverview.hidden = show;
+    viewDetail.hidden = !show;
+    popBody.scrollTop = 0;
+    if (show) {
+      backOverviewBtn.focus({ preventScroll: true });
+    } else {
+      popDetailBtn.focus({ preventScroll: true });
+    }
+  }
+
+  function positionAppMenu() {
+    const rect = appMenuButton.getBoundingClientRect();
+    const menuWidth = 248;
+    const left = Math.min(Math.max(12, rect.left), window.innerWidth - menuWidth - 12);
+    appMenu.style.left = Math.round(left) + 'px';
+    appMenu.style.top = Math.round(rect.bottom + 6) + 'px';
+  }
+
+  function openAppMenu() {
+    closePopover({ immediate: true });
+    appMenu.hidden = false;
+    appMenuButton.setAttribute('aria-expanded', 'true');
+    positionAppMenu();
+    const first = appMenu.querySelector('.menu-item');
+    if (first) first.focus({ preventScroll: true });
+  }
+
+  function closeAppMenu(options = {}) {
+    if (appMenu.hidden) return;
+    appMenu.hidden = true;
+    appMenuButton.setAttribute('aria-expanded', 'false');
+    if (options.restoreFocus) appMenuButton.focus({ preventScroll: true });
+  }
+
+  function showPane(name, options = {}) {
+    currentPane = name;
+    navItems.forEach((button) => {
+      const active = button.dataset.pane === name;
+      button.classList.toggle('is-active', active);
+      if (active) {
+        button.setAttribute('aria-current', 'page');
+      } else {
+        button.removeAttribute('aria-current');
+      }
+    });
+    panes.forEach((pane) => {
+      pane.hidden = pane.id !== 'pane-' + name;
+    });
+    settingsContent.scrollTop = 0;
+    if (options.focus) {
+      const activeButton = navItems.find((button) => button.dataset.pane === name);
+      if (activeButton) activeButton.focus({ preventScroll: true });
+    }
+  }
+
+  function isVisible(el) {
+    return Boolean(el && el.getClientRects().length > 0);
+  }
+
+  function openSettings(pane = 'account', trigger = null) {
+    settingsTrigger = trigger || document.activeElement;
+    if (settingsTimer) {
+      clearTimeout(settingsTimer);
+      settingsTimer = null;
+    }
+    settingsLayer.classList.remove('is-closing');
+    closePopover();
+    closeAppMenu();
+    if (settingsLayer.hidden) {
+      settingsLayer.hidden = false;
+      requestAnimationFrame(() => {
+        settingsLayer.classList.add('is-open');
+      });
+    } else {
+      settingsLayer.classList.add('is-open');
+    }
+    showPane(pane);
+    if (settingsFocusTimer) clearTimeout(settingsFocusTimer);
+    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 20 : 150;
+    settingsFocusTimer = setTimeout(() => {
+      settingsFocusTimer = null;
+      const activeButton = navItems.find((button) => button.dataset.pane === pane);
+      if (activeButton) activeButton.focus({ preventScroll: true });
+    }, delay);
+  }
+
+  function closeSettings(options = {}) {
+    if (settingsLayer.hidden) return;
+    if (settingsFocusTimer) {
+      clearTimeout(settingsFocusTimer);
+      settingsFocusTimer = null;
+    }
+    settingsLayer.classList.remove('is-open');
+    settingsLayer.classList.add('is-closing');
+    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170;
+    if (settingsTimer) clearTimeout(settingsTimer);
+    settingsTimer = setTimeout(() => {
+      settingsLayer.hidden = true;
+      settingsLayer.classList.remove('is-closing');
+      settingsTimer = null;
+    }, delay);
+    if (options.restoreFocus !== false) {
+      const target = isVisible(settingsTrigger) ? settingsTrigger : statusItem;
+      target.focus({ preventScroll: true });
+    }
+  }
+
+  function cancelPendingWork() {
+    [refreshTimer, accountTimer, updateTimer].forEach((timer) => {
+      if (timer) clearTimeout(timer);
+    });
+    refreshTimer = null;
+    accountTimer = null;
+    updateTimer = null;
+    if (refreshBusy) syncText.textContent = '2 分钟前同步';
+    refreshBusy = false;
+    updateBusy = false;
+    footRefresh.removeAttribute('aria-disabled');
+    footRefresh.classList.remove('is-spinning');
+    popover.removeAttribute('aria-busy');
+    syncText.classList.remove('is-syncing');
+    saveAccount.disabled = false;
+    saveAccount.removeAttribute('aria-busy');
+    saveSpinner.hidden = true;
+    saveLabel.textContent = '保存并验证';
+    checkUpdate.disabled = false;
+    checkUpdate.removeAttribute('aria-busy');
+    updateSpinner.hidden = true;
+    updateLabel.textContent = '检查更新';
+  }
+
+  function quitApp() {
+    closeAppMenu();
+    closePopover({ immediate: true });
+    cancelPendingWork();
+    if (!settingsLayer.hidden) {
+      if (settingsTimer) {
+        clearTimeout(settingsTimer);
+        settingsTimer = null;
+      }
+      if (settingsFocusTimer) {
+        clearTimeout(settingsFocusTimer);
+        settingsFocusTimer = null;
+      }
+      settingsLayer.hidden = true;
+      settingsLayer.classList.remove('is-open', 'is-closing');
+    }
+    toast.hidden = true;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    statusItem.hidden = true;
+    quitLayer.hidden = false;
+    restartApp.focus({ preventScroll: true });
+  }
+
+  function restartApplication() {
+    quitLayer.hidden = true;
+    statusItem.hidden = false;
+    positionPopover();
+    openPopover({ focus: true });
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const date = (now.getMonth() + 1) + '月' + now.getDate() + '日';
+    const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    menuClock.textContent = date + ' ' + weekdays[now.getDay()] + ' ' + time;
+  }
+
+  function animateRingNumber() {
+    const target = 96;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      byId('ringNum').textContent = String(target);
+      return;
+    }
+    const node = byId('ringNum');
+    const start = performance.now();
+    const duration = 900;
+    const step = (now) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      node.textContent = String(Math.round(target * eased));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    setTimeout(() => requestAnimationFrame(step), 200);
+  }
+
+  const fieldMap = {
+    workspace: { input: workspaceUrl, error: errWorkspace },
+    email: { input: accountEmail, error: errEmail },
+    token: { input: accessToken, error: errToken }
+  };
+
+  function validateField(name) {
+    const entry = fieldMap[name];
+    if (!entry) return true;
+    let valid = true;
+
+    if (name === 'workspace') {
+      const value = entry.input.value.trim();
+      try {
+        const parsed = new URL(value);
+        valid = parsed.protocol === 'https:' && Boolean(parsed.hostname);
+      } catch (error) {
+        valid = false;
+      }
+    } else if (name === 'email') {
+      valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(entry.input.value.trim());
+    } else if (name === 'token') {
+      valid = entry.input.value.trim().length >= 12;
+    }
+
+    fieldEls[name].classList.toggle('is-invalid', !valid);
+    entry.input.setAttribute('aria-invalid', String(!valid));
+    entry.error.hidden = valid;
+    return valid;
+  }
+
+  function hideSuccess() {
+    accountSuccess.hidden = true;
+  }
+
+  function submitAccount(event) {
+    event.preventDefault();
+    hideSuccess();
+    const names = ['workspace', 'email', 'token'];
+    const results = names.map((name) => validateField(name));
+    const firstInvalid = names.find((name, index) => !results[index]);
+    if (firstInvalid) {
+      fieldMap[firstInvalid].input.focus({ preventScroll: true });
+      return;
+    }
+
+    saveAccount.disabled = true;
+    saveAccount.setAttribute('aria-busy', 'true');
+    saveSpinner.hidden = false;
+    saveLabel.textContent = '正在验证…';
+
+    accountTimer = setTimeout(() => {
+      accountTimer = null;
+      saveAccount.disabled = false;
+      saveAccount.removeAttribute('aria-busy');
+      saveSpinner.hidden = true;
+      saveLabel.textContent = '保存并验证';
+      accountSuccess.hidden = false;
+      connectionMeta.textContent = '刚刚同步 · 示例用户\'s workspace';
+      formNote.textContent = '刚刚验证';
+      if (!refreshBusy) syncText.textContent = '刚刚同步';
+      showToast('连接成功，用量已同步');
+    }, 900);
+  }
+
+  function exportCsv() {
+    try {
+      const rows = [
+        ['日期', 'Token 消耗'],
+        ['2026-10-31', '48200000'],
+        ['2026-11-01', '62400000'],
+        ['2026-11-02', '71600000'],
+        ['2026-11-03', '88100000'],
+        ['2026-11-04', '76500000'],
+        ['2026-11-05', '97800000'],
+        ['2026-11-06', '77720000'],
+        [],
+        ['结算时间', '发起人', '模型', '输入 Token', '输出 Token', '缓存读取', '缓存写入', '消耗额度 (USD)', '抵扣方式'],
+        ['2026-11-06 08:43', '示例用户', 'deepseek-v4.1-flash', '90251', '1881', '89472', '', '-0.0022', 'Design Plan 额度抵扣'],
+        ['2026-11-06 08:43', '示例用户', 'deepseek-v4.1-flash', '89520', '682', '88992', '', '-0.0018', 'Design Plan 额度抵扣'],
+        ['2026-11-06 08:43', '示例用户', 'deepseek-v4.1-flash', '88257', '1248', '87680', '', '-0.0022', 'Design Plan 额度抵扣']
+      ];
+      const csv = '\ufeff' + rows.map((row) => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'corouter-usage-2026-11.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+      showToast('已导出近 7 天用量 CSV');
+    } catch (error) {
+      showToast('当前环境无法下载文件');
+    }
+  }
+
+  statusItem.addEventListener('click', () => {
+    togglePopover();
+  });
+
+  popover.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
+
+  openSettingsBtn.addEventListener('click', () => {
+    openSettings(currentPane, openSettingsBtn);
+  });
+
+  footSettings.addEventListener('click', () => {
+    openSettings(currentPane, footSettings);
+  });
+
+  footRefresh.addEventListener('click', refreshUsage);
+  popDetailBtn.addEventListener('click', () => showDetail(true));
+  backOverviewBtn.addEventListener('click', () => showDetail(false));
+  exportBtn.addEventListener('click', exportCsv);
+
+  appMenuButton.addEventListener('click', () => {
+    if (appMenu.hidden) {
+      openAppMenu();
+    } else {
+      closeAppMenu({ restoreFocus: true });
+    }
+  });
+
+  appMenu.addEventListener('click', (event) => {
+    const item = event.target.closest('.menu-item');
+    if (!item) return;
+    const action = item.dataset.action;
+    closeAppMenu();
+    if (action === 'about') {
+      openSettings('about', statusItem);
+    } else if (action === 'settings') {
+      openSettings(currentPane, statusItem);
+    } else if (action === 'refresh') {
+      statusItem.focus({ preventScroll: true });
+      refreshUsage();
+    } else if (action === 'quit') {
+      quitApp();
+    }
+  });
+
+  appMenu.addEventListener('keydown', (event) => {
+    const items = all('.menu-item', appMenu);
+    const index = items.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const direction = event.key === 'ArrowDown' ? 1 : -1;
+      const next = (index + direction + items.length) % items.length;
+      items[next].focus({ preventScroll: true });
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      items[event.key === 'Home' ? 0 : items.length - 1].focus({ preventScroll: true });
+    } else if (event.key === 'Tab') {
+      closeAppMenu({ restoreFocus: true });
+    }
+  });
+
+  navItems.forEach((button) => {
+    button.addEventListener('click', () => showPane(button.dataset.pane));
+  });
+
+  themeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      prefs.theme = button.dataset.themeChoice;
+      applyTheme();
+      syncThemeButtons();
+      savePrefs();
+    });
+  });
+
+  displayButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      prefs.display = button.dataset.display;
+      applyDisplay();
+      syncDisplayButtons();
+      if (!popover.hidden) positionPopover();
+      savePrefs();
+    });
+  });
+
+  switchLaunch.addEventListener('click', () => {
+    prefs.launchAtLogin = !prefs.launchAtLogin;
+    setSwitch(switchLaunch, prefs.launchAtLogin);
+    savePrefs();
+  });
+
+  switchAutoRefresh.addEventListener('click', () => {
+    prefs.autoRefresh = !prefs.autoRefresh;
+    setSwitch(switchAutoRefresh, prefs.autoRefresh);
+    intervalSelect.disabled = !prefs.autoRefresh;
+    savePrefs();
+  });
+
+  switchUsageAlert.addEventListener('click', () => {
+    prefs.usageAlert = !prefs.usageAlert;
+    setSwitch(switchUsageAlert, prefs.usageAlert);
+    threshold.disabled = !prefs.usageAlert;
+    thresholdRow.classList.toggle('is-disabled', !prefs.usageAlert);
+    savePrefs();
+  });
+
+  switchRenewal.addEventListener('click', () => {
+    prefs.renewalReminder = !prefs.renewalReminder;
+    setSwitch(switchRenewal, prefs.renewalReminder);
+    savePrefs();
+  });
+
+  switchWeekly.addEventListener('click', () => {
+    prefs.weeklyDigest = !prefs.weeklyDigest;
+    setSwitch(switchWeekly, prefs.weeklyDigest);
+    savePrefs();
+  });
+
+  intervalSelect.addEventListener('change', () => {
+    prefs.interval = intervalSelect.value;
+    aboutInterval.textContent = prefs.interval + ' 分钟';
+    savePrefs();
+  });
+
+  threshold.addEventListener('input', () => {
+    prefs.threshold = Number(threshold.value);
+    thresholdOut.textContent = prefs.threshold + '%';
+    savePrefs();
+  });
+
+  closeSettingsBtn.addEventListener('click', () => {
+    closeSettings();
+  });
+
+  Object.entries(fieldMap).forEach(([name, entry]) => {
+    entry.input.addEventListener('blur', () => {
+      validateField(name);
+    });
+    entry.input.addEventListener('input', () => {
+      hideSuccess();
+      if (entry.input.getAttribute('aria-invalid') === 'true') {
+        validateField(name);
+      }
+    });
+  });
+
+  toggleToken.addEventListener('click', () => {
+    const showing = accessToken.type === 'text';
+    accessToken.type = showing ? 'password' : 'text';
+    toggleToken.setAttribute('aria-pressed', String(!showing));
+    toggleToken.setAttribute('aria-label', showing ? '显示访问令牌' : '隐藏访问令牌');
+    const eyeOpen = toggleToken.querySelector('.eye-open');
+    const eyeOff = toggleToken.querySelector('.eye-off');
+    if (eyeOpen && eyeOff) {
+      eyeOpen.hidden = !showing;
+      eyeOff.hidden = showing;
+    }
+  });
+
+  accountForm.addEventListener('submit', submitAccount);
+
+  let updateBusy = false;
+  checkUpdate.addEventListener('click', () => {
+    if (updateBusy) return;
+    updateBusy = true;
+    checkUpdate.disabled = true;
+    checkUpdate.setAttribute('aria-busy', 'true');
+    updateSpinner.hidden = false;
+    updateLabel.textContent = '检查中…';
+    updateTimer = setTimeout(() => {
+      updateTimer = null;
+      updateBusy = false;
+      checkUpdate.disabled = false;
+      checkUpdate.removeAttribute('aria-busy');
+      updateSpinner.hidden = true;
+      updateLabel.textContent = '检查更新';
+      updateStatus.textContent = '已是最新版本 · 2.4.1';
+      showToast('已是最新版本');
+    }, 1000);
+  });
+
+  restartApp.addEventListener('click', restartApplication);
+
+  quitLayer.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      restartApp.focus({ preventScroll: true });
+    }
+  });
+
+  document.addEventListener('pointerdown', (event) => {
+    const target = event.target;
+    if (!appMenu.hidden && !appMenu.contains(target) && !appMenuButton.contains(target)) {
+      closeAppMenu();
+    }
+    if (!popover.hidden && !popover.contains(target) && !statusItem.contains(target) && !appMenu.contains(target)) {
+      closePopover();
+    }
+  }, true);
+
+  document.addEventListener('keydown', (event) => {
+    if (!quitLayer.hidden) return;
+    if (event.key === 'Escape') {
+      if (!appMenu.hidden) {
+        closeAppMenu({ restoreFocus: true });
+        return;
+      }
+      if (!popover.hidden) {
+        closePopover({ restoreFocus: true });
+        return;
+      }
+      if (!settingsLayer.hidden) {
+        closeSettings();
+      }
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'r') {
+      event.preventDefault();
+      refreshUsage();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key === ',') {
+      event.preventDefault();
+      openSettings(currentPane, statusItem);
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!appMenu.hidden && !appMenu.contains(event.target) && !appMenuButton.contains(event.target)) {
+      closeAppMenu();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!popover.hidden) positionPopover();
+    if (!appMenu.hidden) positionAppMenu();
+  });
+
+  if (darkMql.addEventListener) {
+    darkMql.addEventListener('change', () => {
+      if (prefs.theme === 'system') applyTheme();
+    });
+  } else if (darkMql.addListener) {
+    darkMql.addListener(() => {
+      if (prefs.theme === 'system') applyTheme();
+    });
+  }
+
+  applyTheme();
+  applyDisplay();
+  syncControls();
+  showPane('account');
+  updateClock();
+  animateRingNumber();
+  setInterval(updateClock, 30000);
+  positionPopover();
+  requestAnimationFrame(positionPopover);
+  window.addEventListener('load', positionPopover);
+  setTimeout(positionPopover, 120);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 30 30" role="img" aria-label="应用图标（Claude 风格 · 深炭底）">
+  <title>应用图标（Claude 风格 · 深炭底）</title>
+  <defs>
+    <linearGradient id="tile-dark" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#3A3935"/>
+      <stop offset="1" stop-color="#1E1E1B"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="30" height="30" rx="9.5" ry="9.5" fill="url(#tile-dark)"/>
+  <circle cx="15" cy="15" r="8.4" fill="none" stroke="rgba(224,138,109,0.30)" stroke-width="2.8"/>
+  <circle cx="15" cy="15" r="8.4" fill="none" stroke="#E08A6D" stroke-width="2.8"
+          stroke-linecap="round" stroke-dasharray="52.78" stroke-dashoffset="16.89"
+          transform="rotate(-90 15 15)"/>
+  <circle cx="15" cy="15" r="1.7" fill="#E08A6D"/>
+</svg>
