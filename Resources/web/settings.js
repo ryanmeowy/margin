@@ -255,7 +255,7 @@ const SAMPLE = {
   prefs: { theme: "system", display: "percent", launchAtLogin: true, autoRefresh: true, interval: "15",
            usageAlert: true, threshold: 80, renewalReminder: true, weeklyDigest: false },
   account: { baseUrl: "https://amr-api.open-design.ai", email: "ryan@example.com",
-             tokenMasked: "amr_ck_7c41e9d2b8f0c3a1", workspaceName: "ryan y's workspace",
+             tokenMasked: "amr_ck_example000000", workspaceName: "示例工作区",
              planLabel: "Go · 正常", lastVerifiedLabel: "上次验证：2 分钟前",
              launchAtLoginSupported: true, notificationsSupported: true },
   about: { version: "0.1.0", build: "1001", mode: "仅菜单栏", intervalLabel: "15 分钟",
