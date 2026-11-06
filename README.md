@@ -32,9 +32,18 @@ OpenDesign 的订阅额度和用量只在网页控制台里能看到，这个 Ap
 
 ## 安装
 
-到 [Releases](../../releases) 下载最新的 `Margin-v*.zip`，解压后把 `Margin.app` 拖进 `/Applications`。
+**推荐：一行命令（不会触发 Gatekeeper 弹窗）**
 
-首次打开会被 Gatekeeper 拦住（未签名、未公证），macOS 15 上弹的是「已阻止 Margin」框。三种解法，任选：
+```bash
+curl -fsSL https://raw.githubusercontent.com/ryanmeowy/margin/main/scripts/install.sh | sh
+```
+
+用 curl 下载的文件不带隔离标记，装完双击就能开——这就是终端安装和浏览器下载的区别。
+
+**或者：下载 zip**
+
+到 [Releases](../../releases) 下载最新的 `Margin-v*.zip`，解压后把 `Margin.app` 拖进 `/Applications`。
+浏览器下载的 App 会被 Gatekeeper 拦住（未签名、未公证），macOS 15 上弹的是「已阻止 Margin」框。三种解法，任选：
 
 1. **双击压缩包里的 `install.command`**（推荐）：它会复制到「应用程序」、去掉隔离标记并启动；
 2. 在 App 上**右键 → 打开**，再确认一次（macOS 14 及更早有效）；
