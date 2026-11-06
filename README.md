@@ -34,10 +34,15 @@ OpenDesign 的订阅额度和用量只在网页控制台里能看到，这个 Ap
 
 到 [Releases](../../releases) 下载最新的 `Margin-v*.zip`，解压后把 `Margin.app` 拖进 `/Applications`。
 
-首次打开会被 Gatekeeper 拦一次（未签名）：
+首次打开会被 Gatekeeper 拦住（未签名、未公证），macOS 15 上弹的是「已阻止 Margin」框。三种解法，任选：
 
-- 右键点击 App → **打开** → 再点一次「打开」；
-- 或者 `xattr -dr com.apple.quarantine /Applications/Margin.app`。
+1. **双击压缩包里的 `install.command`**（推荐）：它会复制到「应用程序」、去掉隔离标记并启动；
+2. 在 App 上**右键 → 打开**，再确认一次（macOS 14 及更早有效）；
+3. 手动执行：
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Margin.app
+   ```
+   或者：系统设置 → 隐私与安全性 → 底部「已阻止使用 Margin」→ **仍要打开** → 输入密码。
 
 系统要求：macOS 14+，Apple Silicon。
 
