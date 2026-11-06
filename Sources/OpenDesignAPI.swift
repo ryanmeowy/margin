@@ -107,7 +107,16 @@ struct OpenDesignAPI {
         request.setValue("__Secure-better-auth.session_token=\(token)", forHTTPHeaderField: "Cookie")
         if let workspaceId { request.setValue(workspaceId, forHTTPHeaderField: "X-Vela-Workspace-Id") }
 
-        let (data, status) = try await send(request)
+        await apiGate.acquire()
+        let result: (Data, Int)
+        do {
+            result = try await send(request)
+        } catch {
+            await apiGate.release()
+            throw error
+        }
+        await apiGate.release()
+        let (data, status) = result
         switch status {
         case 200..<300: break
         case 401: throw ODError.unauthorized

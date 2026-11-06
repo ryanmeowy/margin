@@ -1008,7 +1008,18 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     unconfigured: '尚未配置账户，点击登录'
   };
 
-  var currentConnState = 'ok';
+  // 桥消息类型集中定义：拼错会变成 undefined，比裸字符串安全
+  var MSG = {
+    ready: 'ready',
+    height: 'height',
+    refresh: 'refresh',
+    exportCSV: 'exportCSV',
+    openSettings: 'openSettings',
+    showDetail: 'showDetail',
+    relogin: 'relogin',
+    quit: 'quit'
+  };
+  var currentConnAction = 'relogin';
   var bridge = (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.bridge) || null;
   var dev = !bridge;
 
@@ -1057,7 +1068,7 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
       + (foot ? foot.getBoundingClientRect().height : 0));
     if (h === lastReportedHeight) { return; }
     lastReportedHeight = h;
-    post({ type: 'height', height: h });
+    post({ type: MSG.height, height: h });
     if (dev) { document.title = 'h=' + h + (constrained ? 'c' : ''); }
   }
 
@@ -1216,37 +1227,42 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     }
   }
 
-  function applyState(state) {
-    syncExportButton(state);
-    document.documentElement.dataset.theme = state.theme;
-    document.body.classList.toggle('is-animated', !!state.animate);
+  function safe(label, fn, arg) {
+    try {
+      fn(arg);
+    } catch (error) {
+      // 单个区块出错不影响其它区块渲染
+      console.error('[margin] render ' + label + ' failed', error);
+    }
+  }
 
+  function renderConnection(state) {
     var connection = state.connection || { state: 'ok' };
     var bar = $('connBar');
     var bad = connection.state !== 'ok';
     bar.hidden = !bad;
-    currentConnState = connection.state;
+    currentConnAction = connection.ctaAction || 'relogin';
     if (bad) {
       $('connText').textContent = connection.message || CONN_TEXT[connection.state] || '连接异常';
-      // 没登录过是「去登录」，掉线是「重试」，过期才是「重新登录」
-      $('connCta').textContent = connection.state === 'unconfigured' ? '去登录'
-        : (connection.state === 'offline' ? '重试' : '重新登录');
+      $('connCta').textContent = connection.cta || '重新登录';
     }
+  }
 
+  function renderPlan(state) {
     var plan = state.plan || {};
     setText('brandBadge', plan.badge);
     setText('planName', plan.label);
     setText('planStatus', plan.stateLabel);
-    // 价格拿不到就整行隐藏（官方 offers 里没有对应档位/周期时）
     var hasPrice = !!(plan.priceLabel && String(plan.priceLabel).length);
     $('planPrice').hidden = !hasPrice;
     setText('priceNum', plan.priceLabel);
     setText('priceUnit', hasPrice ? plan.priceUnit : '');
     setText('planMeta', plan.periodLabel);
-    // 没有到期时间（Free 计划）就别留一个孤零零的日历图标
     var metaRow = document.querySelector('.plan-meta');
     if (metaRow) { metaRow.hidden = !plan.periodLabel; }
+  }
 
+  function renderQuota(state) {
     var w5 = (state.windows || [])[0] || {};
     var w7 = (state.windows || [])[1] || {};
     var p5 = w5.remainingPercent || 0;
@@ -1264,7 +1280,9 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     var wallet = state.wallet || {};
     setText('walletLabel', wallet.label);
     setText('walletCaption', wallet.caption);
+  }
 
+  function renderUsage(state) {
     var usage = state.usage || {};
     setText('chartSub', '总计 ' + (usage.totalLabel || '') + ' · 日均 ' + (usage.dailyAvgLabel || ''));
     renderChart(usage);
@@ -1277,7 +1295,9 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     setText('resCacheRead', usage.cacheReadLabel);
     setText('resCacheWrite', usage.cacheWriteLabel);
     renderRecent(usage.recent);
+  }
 
+  function renderFooter(state) {
     var sync = state.sync || {};
     var syncText = $('syncText');
     syncText.textContent = sync.label || '';
@@ -1285,6 +1305,18 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     var refresh = $('footRefresh');
     refresh.classList.toggle('is-spinning', !!sync.busy);
     refresh.setAttribute('aria-disabled', sync.busy ? 'true' : 'false');
+  }
+
+  function applyState(state) {
+    document.documentElement.dataset.theme = state.theme;
+    document.body.classList.toggle('is-animated', !!state.animate);
+
+    safe('export', syncExportButton, state);
+    safe('connection', renderConnection, state);
+    safe('plan', renderPlan, state);
+    safe('quota', renderQuota, state);
+    safe('usage', renderUsage, state);
+    safe('footer', renderFooter, state);
 
     reportSoon();
   }
@@ -1298,23 +1330,23 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   }
 
   function wire() {
-    $('footRefresh').addEventListener('click', function () { post({ type: 'refresh' }); });
+    $('footRefresh').addEventListener('click', function () { post({ type: MSG.refresh }); });
     var headSettings = $('headSettings');
-    if (headSettings) { headSettings.addEventListener('click', function () { post({ type: 'openSettings' }); }); }
-    $('footQuit').addEventListener('click', function () { post({ type: 'quit' }); });
+    if (headSettings) { headSettings.addEventListener('click', function () { post({ type: MSG.openSettings }); }); }
+    $('footQuit').addEventListener('click', function () { post({ type: MSG.quit }); });
     var headSettings = $('openSettingsBtn');
-    if (headSettings) { headSettings.addEventListener('click', function () { post({ type: 'openSettings' }); }); }
-    $('popDetailBtn').addEventListener('click', function () { post({ type: 'showDetail', show: true }); showDetail(true); });
-    $('backOverviewBtn').addEventListener('click', function () { post({ type: 'showDetail', show: false }); showDetail(false); });
-    $('exportBtn').addEventListener('click', function () { post({ type: 'exportCSV' }); });
+    if (headSettings) { headSettings.addEventListener('click', function () { post({ type: MSG.openSettings }); }); }
+    $('popDetailBtn').addEventListener('click', function () { post({ type: MSG.showDetail, show: true }); showDetail(true); });
+    $('backOverviewBtn').addEventListener('click', function () { post({ type: MSG.showDetail, show: false }); showDetail(false); });
+    $('exportBtn').addEventListener('click', function () { post({ type: MSG.exportCSV }); });
     $('connBar').addEventListener('click', function () {
-      post({ type: currentConnState === 'offline' ? 'refresh' : 'relogin' });
+      post({ type: currentConnAction === 'refresh' ? MSG.refresh : MSG.relogin });
     });
 
     document.addEventListener('keydown', function (event) {
       if (event.metaKey && event.key.toLowerCase() === 'r') {
         event.preventDefault();
-        post({ type: 'refresh' });
+        post({ type: MSG.refresh });
       }
     });
   }
@@ -1333,7 +1365,7 @@ html.constrained .pop-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   document.addEventListener('DOMContentLoaded', function () {
     setupHeightObserver();
     wire();
-    post({ type: 'ready' });
+    post({ type: MSG.ready });
     if (!dev) { return; }
     var q = new URLSearchParams(location.search);
     if (q.get('theme')) { SAMPLE.theme = q.get('theme'); }   // dev：?theme=light 预览浅色

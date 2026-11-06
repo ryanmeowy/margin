@@ -150,7 +150,12 @@ struct PanelState: Codable {
     var exporting: Bool = false
     var exportCount: Int = 0
 
-    struct Connection: Codable { var state: String; var message: String }
+    struct Connection: Codable {
+        var state: String
+        var message: String
+        var cta: String = ""            // 连接条右侧按钮文案（Swift 决定，JS 只渲染）
+        var ctaAction: String = "relogin"  // relogin | refresh
+    }
     struct PrefsView: Codable { var display: String; var threshold: Int }
     struct PlanView: Codable {
         var tier: String; var label: String; var badge: String

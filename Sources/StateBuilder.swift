@@ -185,6 +185,16 @@ enum StateBuilder {
 
     // MARK: 小工具
 
+    /// 连接条右侧按钮：文案 + 点击动作，一处定义
+    static func connectionCta(for state: String) -> (label: String, action: String) {
+        switch state {
+        case "unconfigured": return ("去登录", "relogin")
+        case "offline": return ("重试", "refresh")
+        case "denied": return ("重新登录", "relogin")
+        default: return ("重新登录", "relogin")
+        }
+    }
+
     static func dayKey(_ date: Date) -> String { keyFormatter.string(from: date) }
 
     /// 最近 7 个自然日（含今天），柱状图固定 7 根

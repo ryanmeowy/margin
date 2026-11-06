@@ -370,6 +370,9 @@ final class UsageStore {
             connection: connection, workspace: workspace, snapshot: snapshot, codingPlan: codingPlan,
             usage: usagePage, daily: daily, dailyState: dailyState, email: deps.email(), lastSync: lastSync,
             offers: offers))
+        let cta = StateBuilder.connectionCta(for: state.connection.state)
+        state.connection.cta = cta.label
+        state.connection.ctaAction = cta.action
         state.exporting = exporting
         state.exportCount = exportCount
         panel = state
